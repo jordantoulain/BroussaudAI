@@ -1,0 +1,52 @@
+# Global ignore file for the entire project
+
+# Environment files - NEVER commit these
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Node.js
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build outputs
+/build
+/dist
+*.exe
+
+# Docker
+.docker/
+
+# Database files
+*.sqlite
+*.db
+
+# Local configuration overrides
+*.local
+*.yml.local
+*.yaml.local

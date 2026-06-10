@@ -1,0 +1,21 @@
+services:
+  broussaud_ai:
+    build: ./api/
+    ports:
+      - "${PORTS}:8000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - JWT_SECRET=${JWT_SECRET}
+      - MCP_SERVER=${MCP_SERVER}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
+  broussaud_ai_mcp:
+    build: ./mcp/
+    ports:
+      - "${MCP_PORTS}:8000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}

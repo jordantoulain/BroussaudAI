@@ -1,0 +1,194 @@
+# Registry - Composants Réutilisables
+
+---
+
+## Backend
+
+### Modules
+
+| Chemin | Description | Utilisation |
+|--------|-------------|-------------|
+| `core/supabase_client.py` | Client Supabase configuré | `from core.supabase_client import supabase` |
+| `core/supabase_init.py` | Initialisation tables DB | Appelé au startup |
+| `core/llm.py` | Configuration LLM/Embeddings | Importé au démarrage |
+| `services/agent.py` | Service agent RAG avec LlamaIndex, intégration MCP | `from services.agent import RAGConfig, RAGAgentService, chat_with_agent, get_rag_service` |
+| `api/routes/admin.py` | Routes administration avec protection rôle ADMIN | Accès administratif |
+| `api/routes/conversations.py` | Routes conversations utilisateur (non-admin) | GET /conversations, GET /conversations/{id}, GET /conversations/archives, DELETE /conversations/{id} |
+| `api/routes/ia.py` | Routes IA avec RAG | POST /ai/chat (chat avec agent), POST /ai/embedding (indexation PDF/texte) |
+
+## Serveur MCP
+
+### Modules
+
+| Chemin | Description | Utilisation |
+|--------|-------------|-------------|
+| `mcp/app/core/supabase_client.py` | Client Supabase (schema public, timeout 10s) | `from core import supabase` |
+| `mcp/app/tools/__init__.py` | Exports centralisés des outils MCP | `from tools import hello_world, get_stat_by_name, get_stats_count, get_all_stats, get_stats_by_filter` |
+| `mcp/app/server.py` | Instance FastMCP + registration des outils | Point d'entrée: `mcp.http_app()` |
+
+### Fonctions Outils MCP
+
+| Module | Fonction | Paramètres | Retour | Description |
+|--------|----------|------------|--------|-------------|
+| `mcp/app/tools/hello_world.py` | `hello_world` | - | `str` | Test basique |
+| `mcp/app/tools/stats.py` | `get_stat_by_name` | `name: str` | `dict` | Stat par nom (select name, value) |
+| `mcp/app/tools/stats_utils.py` | `get_stats_count` | - | `int` | Compte total stats |
+| `mcp/app/tools/stats_utils.py` | `get_all_stats` | - | `List[Dict]` | Toutes les stats |
+| `mcp/app/tools/stats_utils.py` | `get_stats_by_filter` | `filters: Dict[str, Union[str, int, float, Dict]]` | `List[Dict]` | Stats filtrées (opérateurs: eq, gt, gte, lt, lte) |
+
+### Fonctions
+
+| Module | Fonction | Paramètres | Retour | Description |
+|--------|----------|------------|--------|-------------|
+| `api/routes/auth.py` | `get_current_user` | `token: str` | `dict` | Décode JWT, retourne user info (inclut role) |
+| `api/routes/auth.py` | `create_access_token` | `data: dict` | `str` | Crée token (5 min, inclut role) |
+| `api/routes/auth.py` | `create_refresh_token` | `data: dict` | `str` | Crée token (7 jours, inclut role) |
+| `api/routes/auth.py` | `get_password_hash` | `password: str` | `str` | Hash bcrypt |
+| `api/routes/auth.py` | `verify_password` | `plain, hashed: str` | `bool` | Vérifie mot de passe |
+| `api/routes/admin.py` | `admin_dashboard` | `current_user: dict` | `dict` | Dashboard admin + timeline (ADMIN seulement) |
+| `api/routes/admin.py` | `list_users` | `current_user: dict` | `dict` | Liste utilisateurs (ADMIN seulement) |
+| `api/routes/admin.py` | `create_user` | `user_data: dict, current_user: dict` | `dict` | Crée utilisateur (POST /admin/users) (ADMIN seulement) |
+| `api/routes/admin.py` | `update_user` | `user_id: str, user_data: dict, current_user: dict` | `dict` | Met à jour utilisateur (PUT /admin/users/{id}) (ADMIN seulement) |
+| `api/routes/admin.py` | `delete_user` | `user_id: str, current_user: dict` | `-` | Supprime utilisateur (DELETE /admin/users/{id}) (ADMIN seulement) |
+| `api/routes/admin.py` | `get_timeline_data` | - | `dict` | Génère timeline 10 jours pour conversations et messages |
+| `services/agent.py` | `RAGConfig` | Dataclass de configuration (collection_name, dimension, similarity_top_k, mcp_server_url, prompts_dir) |
+| `services/agent.py` | `PromptManager` | Gestionnaire de prompts (load_prompt, get_prompt_template) |
+| `services/agent.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool |
+| `services/agent.py` | `get_rag_service` | Contexte async pour RAGAgentService |
+| `services/agent.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP), historique, retourne `response`, `context` |
+| `services/agent.py` | `format_source_nodes` | `source_nodes: list[NodeWithScore]` | `list[dict]` | Formate les nodes source avec id, content, score, metadata |
+| `services/agent.py` | `extract_json_from_response` | `text: str` | `str` | Extrait JSON brut d'une réponse textuelle |
+| `services/agent.py` | Intercepteur Gemini | Patching de `google.genai._transformers.t_schema` | Nettoie additionalProperties des schemas |
+
+---
+
+## Frontend
+
+### Composants UI
+
+| Chemin | Props | Description |
+|--------|-------|-------------|
+| `components/shared/Logo.jsx` | - | Logo Broussaud |
+| `components/shared/Skeleton.jsx` | `className` | Skeleton de chargement avec animation pulse |
+| `components/shared/Skeleton.jsx` | `AvatarSkeleton` | Skeleton pour avatar (w-8 h-8) |
+| `components/shared/Skeleton.jsx` | `TextSkeleton` | Skeleton pour ligne de texte (h-3) |
+| `components/shared/Skeleton.jsx` | `StatsCardSkeleton` | Skeleton pour carte de statistiques |
+| `components/shared/Skeleton.jsx` | `TableRowSkeleton` | Skeleton pour ligne de tableau (param: cells) |
+| `components/shared/Skeleton.jsx` | `ConversationCardSkeleton` | Skeleton pour carte de conversation |
+| `components/ui/Dropdown.jsx` | `buttonContent, buttonClassName, menuClassName, children` | Dropdown générique |
+
+### Composants Auth
+
+| Chemin | Props | Description |
+|--------|-------|-------------|
+| `components/auth/AuthCard.jsx` | `children, title` | Container carte auth |
+| `components/auth/FormInput.jsx` | `type, name, value, onChange, placeholder, label, icon, error` | Input stylisé |
+| `components/auth/FormButton.jsx` | `type, children, disabled, className` | Bouton formulaire |
+| `components/auth/FormRow.jsx` | `children` | Ligne de formulaire |
+| `components/shared/ErrorAlert.jsx` | `error, className` | Alerte erreur |
+| `components/auth/AuthLink.jsx` | `href, children` | Lien auth |
+
+### Composants Chat
+
+| Chemin | Props | Description |
+|--------|-------|-------------|
+| `components/chat/Sidebar.jsx` | `currentPage, onNewConversation, userInfo, conversations, activeConversationId, isMobile, isCollapsed, onToggle, onClose, isLoading` | Sidebar avec animation largeur (w-64 ↔ w-12), fixed sur mobile, isLoading pour skeletons |
+| `components/chat/SidebarCollapsed.jsx` | `currentPage, userInfo, onToggle, isLoading` | Contenu collapsed (3 carrés) avec animation icône, skeleton avatar si isLoading |
+| `components/chat/NavigationSelector.jsx` | `currentPage, role` | Dropdown navigation (Broussaud AI, Boutique Maison Broussaud, Administration) - Administration visible uniquement pour ADMIN |
+| `components/chat/NewConversationButton.jsx` | `onClick` | Bouton nouvelle conversation |
+| `components/chat/ConversationList.jsx` | `conversations, activeConversationId, onSelectConversation, onDeleteConversation, isLoading` | Liste conversations avec 3 skeletons si isLoading |
+| `components/chat/ConversationItem.jsx` | `conversation, isActive` | Item conversation |
+| `components/chat/UserProfile.jsx` | `userInfo, isLoading` | Profil utilisateur avec dropdown, fond rouge-500 pour ADMIN, skeleton si isLoading |
+| `components/chat/ChatInput.jsx` | `input, onChange, onSubmit, isLoading` | Input chat avec texte de prévention |
+
+| `components/chat/ChatHeader.jsx` | - | Header chat |
+| `components/chat/MessageList.jsx` | `messages, isLoading, messagesEndRef, isAdminView, userEmail` | Liste messages avec scroll, masque désactivé si isAdminView=true |
+
+| `components/chat/Message.jsx` | `message, userEmail` | Bulle message (user/IA) avec icône loupe, affiche userEmail au lieu de "Vous" si fourni |
+
+| `components/chat/MessageMeta.jsx` | `label, subLabel` | Métadonnées message |
+| `components/chat/ChatInput.jsx` | `input, onChange, onSubmit, isLoading` | Input chat |
+| `components/chat/LoadingIndicator.jsx` | `className` | Indicateur de chargement animé |
+| `components/chat/TagBadge.jsx` | `tag` | Badge tag |
+| `components/chat/ChatHeader.jsx` | `title, isArchived` | Header chat avec support titre et icône archive |
+
+### Composants Admin
+
+| Chemin | Props | Description |
+|--------|-------|-------------|
+| `components/admin/AdminSidebar.jsx` | `userInfo, isMobile, isCollapsed, onToggle, onClose` | Sidebar admin avec NavigationSelector + AdminNavigation + UserProfile |
+| `components/admin/AdminNavigation.jsx` | - | Navigation verticale admin (Dashboard, Membres, Conversations) |
+| `components/admin/MiniChart.jsx` | `series, categories, color` | Graphique ApexCharts minimaliste non-interactif pour dashboard |
+| `components/admin/SideCanvas.jsx` | `isOpen, onClose, title, children` | Panneau latéral glissant depuis la droite avec animation (translate-x) |
+| `components/admin/UserForm.jsx` | `user, onSubmit, onCancel, loading` | Formulaire pour créer/modifier un utilisateur |
+| `components/admin/DeleteModal.jsx` | `isOpen, onClose, onConfirm, title, message, itemName` | Modale de confirmation de suppression |
+| `components/admin/RoleDropdown.jsx` | `value, onChange, className` | Dropdown custom pour sélection des rôles (USER/ADMIN) |
+
+### Pages Admin
+
+| Chemin | Description |
+|--------|-------------|
+| `app/admin/layout.jsx` | Layout admin avec AdminSidebar |
+| `app/admin/page.jsx` | Redirection vers /admin/dashboard |
+| `app/admin/dashboard/page.jsx` | Stats admin avec MiniChart pour conversations et messages |
+| `app/admin/members/page.jsx` | CRUD membres avec pagination, SideCanvas (création/modification), DeleteModal (suppression) |
+| `app/admin/conversations/page.jsx` | Liste conversations avec recherche + filtres label/sub_label/tag |
+| `app/admin/conversations/[id]/page.jsx` | Détail conversation avec user_mail et MessageList (isAdminView=true, userEmail) |
+
+### Pages Chat
+
+| Chemin | Description |
+|--------|-------------|
+| `app/chat/layout.jsx` | Layout commun pour /chat/* avec Sidebar et gestion state |
+| `app/chat/page.jsx` | Page principale du chat avec chargement messages historiques |
+| `app/chat/archives/page.jsx` | Liste des conversations archivées (grille responsive, recherche, pagination) |
+| `app/chat/archives/[id]/page.jsx` | Détail d'une conversation archivée (lecture seule) |
+
+### Hooks
+
+| Chemin | Retour | Description |
+|--------|--------|-------------|
+| `hooks/useChat.js` | `messages, input, setInput, isLoading, conversationId, currentPage, setCurrentPage, handleSend, messagesEndRef` | Gestion chat + extraction des `contexts` depuis l'API |
+| `hooks/useUserInfo.js` | `userInfo, loading, error` | Infos utilisateur depuis JWT (inclut role) |
+| `hooks/useClickOutside.js` | `ref, onClickOutside` | Détection clic extérieur |
+
+### Services
+
+| Chemin | Description | Utilisation |
+|--------|-------------|-------------|
+| `services/api.js` | Axios + interceptors JWT | `import { api } from '@/services/api'` |
+
+### Layout
+
+| Chemin | Props | Description |
+|--------|-------|-------------|
+| `components/layout/AnimatedBackground.jsx` | - | Fond animé canvas |
+
+---
+
+## API Routes Frontend
+
+| Chemin | Méthode | Description |
+|--------|---------|-------------|
+| `/api/refresh` | POST | Rafraîchit access_token |
+| `/api/user` | GET | Récupère infos user (inclut role) |
+
+---
+
+## Middleware Frontend
+
+| Chemin | Description |
+|--------|-------------|
+| `proxy.js` | Protection route /admin (vérification JWT + rôle ADMIN requis) |
+
+---
+
+## Utils & Helpers
+
+| Chemin | Fonction/Constante | Description |
+|--------|-------------------|-------------|
+| `app/actions/auth.js` | `loginAction, registerAction, logoutAction` | Server Actions auth |
+| `utils/formatText.js` | `formatResponseText(text)` | Formate le texte IA avec `%NL%` et `%BOLD%/%ENDBOLD%` |
+| `utils/pageColors.js` | `PAGE_COLORS`, `getPageColor()` | Gestion centralisée des couleurs par page |
+| `utils/messageFormatters.js` | `parseAPIResponse`, `createAIMessage`, `createUserMessage`, `createWelcomeMessage`, `createErrorMessage`, `formatHistoricalMessages` | Formatage centralisé des messages chat |
+| `utils/userUtils.js` | `getRoleColor(role)` | Retourne classe Tailwind pour couleur de rôle (ADMIN=red-500, USER=violet-500) |
