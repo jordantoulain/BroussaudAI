@@ -19,7 +19,6 @@ export const ConversationsContext = createContext()
  * @returns {JSX.Element}
  */
 export default function ChatLayout({ children }) {
-  const pathname = usePathname()
   const router = useRouter()
   const { userInfo, loading: isUserLoading } = useUserInfo()
   
