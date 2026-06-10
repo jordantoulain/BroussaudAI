@@ -70,12 +70,13 @@ export function createUserMessage(text) {
 
 /**
  * Formate le message de bienvenue par défaut
+ * Utilise un ID fixe unique pour éviter les doublons
  * 
  * @returns {Object} - Message de bienvenue
  */
 export function createWelcomeMessage() {
   return {
-    id: 1,
+    id: 'welcome-message',
     data: {
       label: 'SYSTÈME',
       sub_label: 'ACCUEIL',

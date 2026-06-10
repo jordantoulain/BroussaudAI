@@ -49,7 +49,13 @@ function ChatPageContent({
           // Formater les messages historiques
           const interleaved = formatHistoricalMessages(data.messages)
           
-          setMessages(interleaved)
+          // Ajouter le message de bienvenue en premier (uniquement pour les conversations actives)
+          const hasWelcomeMessage = interleaved.some(msg => msg.id === 'welcome-message')
+          const messagesWithWelcome = hasWelcomeMessage 
+            ? interleaved 
+            : [createWelcomeMessage(), ...interleaved]
+          
+          setMessages(messagesWithWelcome)
         } catch (err) {
           console.error('Erreur chargement conversation:', err)
         } finally {
