@@ -1,6 +1,14 @@
 # Changelog
 
 ## 2026-06-11
+- **Refactor** : Création composants ActionError et ActionSuccess réutilisables dans /shared/ActionAlert.jsx
+- **Refactor** : Remplacement notifications inline par ActionError/ActionSuccess dans /admin/documents/page.jsx et /admin/members/page.jsx
+- **Feature** : Ajout page /admin/documents pour gestion des embeddings de documents
+- **Feature** : DocumentUploadForm.jsx - Upload PDF avec drag & drop et validation (PDF seulement, 50MB max)
+- **Feature** : GET /admin/documents - Liste documents regroupés par filename depuis vecs.documents_gemini
+- **Feature** : DELETE /admin/documents/{filename} - Suppression de toutes les lignes (chunks) d'un fichier
+- **Feature** : POST /ai/embedding - Réservé aux ADMIN, vérifie doublons via metadata.filename
+- **Feature** : AdminNavigation.jsx - Ajout lien "Documents"
 - **Fix** : components/auth/index.js - Correction import ErrorAlert (`from '../shared'` au lieu de `from './ErrorAlert'`)
 
 ## 2026-06-10

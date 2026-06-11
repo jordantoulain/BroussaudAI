@@ -59,6 +59,9 @@
 | `services/agent.py` | `format_source_nodes` | `source_nodes: list[NodeWithScore]` | `list[dict]` | Formate les nodes source avec id, content, score, metadata |
 | `services/agent.py` | `extract_json_from_response` | `text: str` | `str` | Extrait JSON brut d'une réponse textuelle |
 | `services/agent.py` | Intercepteur Gemini | Patching de `google.genai._transformers.t_schema` | Nettoie additionalProperties des schemas |
+| `api/routes/admin.py` | `list_documents` | `current_user: dict` | `dict` | Liste documents regroupés par filename (GET /admin/documents) (ADMIN seulement) |
+| `api/routes/admin.py` | `delete_document` | `filename: str, current_user: dict` | `-` | Supprime toutes les lignes d'un fichier (DELETE /admin/documents/{filename}) (ADMIN seulement) |
+| `api/routes/ia.py` | `embed` | `text: str, file: UploadFile, current_user: dict` | `dict` | Indexe PDF/texte (POST /ai/embedding) (ADMIN seulement, vérifie doublons) |
 
 ---
 
@@ -75,6 +78,8 @@
 | `components/shared/Skeleton.jsx` | `StatsCardSkeleton` | Skeleton pour carte de statistiques |
 | `components/shared/Skeleton.jsx` | `TableRowSkeleton` | Skeleton pour ligne de tableau (param: cells) |
 | `components/shared/Skeleton.jsx` | `ConversationCardSkeleton` | Skeleton pour carte de conversation |
+| `components/shared/ActionAlert.jsx` | `ActionError` | Alerte erreur réutilisable (icône TriangleAlert, fond rouge-500) |
+| `components/shared/ActionAlert.jsx` | `ActionSuccess` | Alerte succès réutilisable (icône CheckCircle2, fond green-500) |
 | `components/ui/Dropdown.jsx` | `buttonContent, buttonClassName, menuClassName, children` | Dropdown générique |
 
 ### Composants Auth
@@ -123,6 +128,7 @@
 | `components/admin/UserForm.jsx` | `user, onSubmit, onCancel, loading` | Formulaire pour créer/modifier un utilisateur |
 | `components/admin/DeleteModal.jsx` | `isOpen, onClose, onConfirm, title, message, itemName` | Modale de confirmation de suppression |
 | `components/admin/RoleDropdown.jsx` | `value, onChange, className` | Dropdown custom pour sélection des rôles (USER/ADMIN) |
+| `components/admin/DocumentUploadForm.jsx` | `onSubmit, onCancel, loading` | Formulaire upload PDF avec drag & drop, validation (PDF, 50MB), barre de progression |
 
 ### Pages Admin
 
@@ -134,6 +140,7 @@
 | `app/admin/members/page.jsx` | CRUD membres avec pagination, SideCanvas (création/modification), DeleteModal (suppression) |
 | `app/admin/conversations/page.jsx` | Liste conversations avec recherche + filtres label/sub_label/tag |
 | `app/admin/conversations/[id]/page.jsx` | Détail conversation avec user_mail et MessageList (isAdminView=true, userEmail) |
+| `app/admin/documents/page.jsx` | Gestion des embeddings de documents (liste regroupée par filename, upload, suppression) |
 
 ### Pages Chat
 

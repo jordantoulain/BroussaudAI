@@ -197,7 +197,7 @@ web/
 
 | Table | Champs |
 |-------|--------|
-| **documents_gemini** | id (UUID), content (TEXT), metadata (JSONB), embedding (VECTOR(3072)), created_at |
+| **documents_gemini** | id (UUID), vec (VECTOR(3072)), metadata (JSONB) |
 
 **Index** : HNSW pour recherche vectorielle rapide
 **Dimension** : 3072 (Google GenAI gemini-embedding-2)
@@ -221,7 +221,7 @@ web/
 | DELETE | `/conversations/{id}` | ✅ | Soft-delete une conversation (is_active=false) |
 | **IA** |
 | POST | `/ai/chat` | ✅ | Chat avec RAG |
-| POST | `/ai/embedding` | ✅ | Upload document (PDF/text) |
+| POST | `/ai/embedding` | ✅ | Upload document (PDF/text) - ADMIN only, vérifie doublons via metadata.filename |
 | **Administration** |
 | GET | `/admin/` | ✅ | Dashboard admin avec stats + timeline (ADMIN seulement) |
 | GET | `/admin/users` | ✅ | Liste utilisateurs (ADMIN seulement) |
@@ -230,6 +230,8 @@ web/
 | DELETE | `/admin/users/{id}` | ✅ | Supprimer utilisateur (ADMIN seulement) |
 | GET | `/admin/conversations` | ✅ | Liste TOUTES les conversations avec user_mail (ADMIN seulement) |
 | GET | `/admin/conversations/{id}` | ✅ | Détail conversation + messages avec user_mail (ADMIN seulement) |
+| GET | `/admin/documents` | ✅ | Liste documents regroupés par filename (ADMIN seulement) |
+| DELETE | `/admin/documents/{filename}` | ✅ | Supprime toutes les lignes d'un fichier (chunks) (ADMIN seulement) |
 
 ---
 
@@ -259,6 +261,7 @@ web/
 | `/admin/members` | ✅ | CRUD membres avec SideCanvas (ADMIN seulement) |
 | `/admin/conversations` | ✅ | Liste toutes conversations (ADMIN seulement) |
 | `/admin/conversations/{id}` | ✅ | Détail conversation (ADMIN seulement) |
+| `/admin/documents` | ✅ | Gestion des embeddings de documents (ADMIN seulement) |
 | `/chat/archives` | ✅ | Liste des archives utilisateur (lecture seule) |
 | `/chat/archives/{id}` | ✅ | Détail d'une archive (lecture seule) |
 | `/api/refresh` | ❌ | Rafraîchissement token (API Route) |

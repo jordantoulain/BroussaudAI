@@ -36,7 +36,7 @@
 - Implémenter CRUD conversations
 - Chat RAG fonctionnel
 - Responsive sidebar mobile
-- Panneau admin avec Dashboard (stats), Membres (pagination), Conversations (pagination)
+- Panneau admin avec Dashboard (stats), Membres (pagination), Conversations (pagination), Documents
 - Dashboard admin avec MiniChart pour conversations et messages
 - Affichage user_mail au lieu de user_id dans les vues admin
 - Rôle ADMIN visible via fond rouge dans UserProfile
@@ -51,3 +51,5 @@
 - Pages archives : liste (grille) et détail (lecture seule)
 - Navigation fixe "Broussaud AI" dans NavigationSelector
 - Utilisation du titre RAG comme titre de conversation
+- Gestion des embeddings de documents via /admin/documents (liste, suppression par filename)
+- Upload PDF via /ai/embedding (ADMIN only) avec vérification doublons
