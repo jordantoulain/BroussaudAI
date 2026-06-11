@@ -4,7 +4,8 @@ import uuid
 import json
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, status
 from llama_index.core import Document, Settings
-from llama_index.readers.file import PDFReader
+from llama_index.readers.file import PandasCSVReader, PandasExcelReader
+from llama_index.readers.json import JSONReader
 from pydantic import BaseModel
 from api.routes.auth import get_current_user
 from api.routes.admin import verify_admin
@@ -109,11 +110,15 @@ async def embed(
     verify_admin(current_user)
     
     if file is not None:
-        # Vérifier que c'est un PDF
-        if not file.filename.lower().endswith('.pdf'):
+        # Extensions autorisées
+        ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.json', '.csv', '.xlsx'}
+        filename = file.filename.lower()
+        
+        # Vérifier l'extension
+        if not any(filename.endswith(ext) for ext in ALLOWED_EXTENSIONS):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Seuls les fichiers PDF sont autorisés"
+                detail=f"Extensions autorisées : PDF, TXT, JSON, CSV, XLSX"
             )
         
         # Vérifier si un document avec le même nom existe déjà
@@ -130,13 +135,46 @@ async def embed(
                 )
         
         async with get_rag_service() as service:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            # Déterminer le suffixe et le reader selon l'extension
+            reader = None
+            if filename.endswith('.pdf'):
+                suffix = ".pdf"
+                reader = PDFReader()
+                use_reader = True
+            elif filename.endswith('.txt'):
+                # Pour TXT, on lit directement le contenu
+                suffix = ".txt"
+                use_reader = False
+            elif filename.endswith('.csv'):
+                suffix = ".csv"
+                reader = PandasCSVReader()
+                use_reader = True
+            elif filename.endswith('.xlsx'):
+                suffix = ".xlsx"
+                reader = PandasExcelReader()
+                use_reader = True
+            elif filename.endswith('.json'):
+                suffix = ".json"
+                reader = JSONReader()
+                use_reader = True
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Format non supporté pour l'extraction : {filename}"
+                )
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 tmp.write(await file.read())
                 tmp_path = tmp.name
 
             try:
-                reader = PDFReader()
-                documents = reader.load_data(tmp_path)
+                if use_reader:
+                    documents = reader.load_data(tmp_path)
+                else:
+                    # Lire le fichier TXT directement
+                    with open(tmp_path, 'r', encoding='utf-8') as f:
+                        text_content = f.read()
+                    documents = [Document(text=text_content)]
                 
                 for doc in documents:
                     doc.metadata["filename"] = file.filename
@@ -149,9 +187,11 @@ async def embed(
                 
                 service.index.insert_nodes(nodes)
                 
+                file_type = file.filename.split('.')[-1].lower()
+                
                 return {
                     "status": "success",
-                    "type": "pdf",
+                    "type": file_type,
                     "filename": file.filename,
                     "chunks": len(nodes)
                 }

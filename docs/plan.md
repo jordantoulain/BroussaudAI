@@ -52,4 +52,4 @@
 - Navigation fixe "Broussaud AI" dans NavigationSelector
 - Utilisation du titre RAG comme titre de conversation
 - Gestion des embeddings de documents via /admin/documents (liste, suppression par filename)
-- Upload PDF via /ai/embedding (ADMIN only) avec vérification doublons
+- Upload PDF/TXT/JSON/CSV/XLSX via /ai/embedding (ADMIN only) avec vérification doublons

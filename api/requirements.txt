@@ -12,6 +12,9 @@ llama-index-llms-ollama
 llama-index-embeddings-ollama
 llama-index-vector-stores-supabase
 llama-index-readers-file
+llama-index-readers-json
+pandas
+openpyxl
 llama-index-tools-mcp
 llama-index-llms-google-genai
 llama-index-embeddings-google-genai

@@ -14,7 +14,7 @@
 | `services/agent.py` | Service agent RAG avec LlamaIndex, intégration MCP | `from services.agent import RAGConfig, RAGAgentService, chat_with_agent, get_rag_service` |
 | `api/routes/admin.py` | Routes administration avec protection rôle ADMIN | Accès administratif |
 | `api/routes/conversations.py` | Routes conversations utilisateur (non-admin) | GET /conversations, GET /conversations/{id}, GET /conversations/archives, DELETE /conversations/{id} |
-| `api/routes/ia.py` | Routes IA avec RAG | POST /ai/chat (chat avec agent), POST /ai/embedding (indexation PDF/texte) |
+| `api/routes/ia.py` | Routes IA avec RAG | POST /ai/chat (chat avec agent), POST /ai/embedding (indexation PDF/TXT/JSON/CSV/XLSX) |
 
 ## Serveur MCP
 
@@ -61,7 +61,7 @@
 | `services/agent.py` | Intercepteur Gemini | Patching de `google.genai._transformers.t_schema` | Nettoie additionalProperties des schemas |
 | `api/routes/admin.py` | `list_documents` | `current_user: dict` | `dict` | Liste documents regroupés par filename (GET /admin/documents) (ADMIN seulement) |
 | `api/routes/admin.py` | `delete_document` | `filename: str, current_user: dict` | `-` | Supprime toutes les lignes d'un fichier (DELETE /admin/documents/{filename}) (ADMIN seulement) |
-| `api/routes/ia.py` | `embed` | `text: str, file: UploadFile, current_user: dict` | `dict` | Indexe PDF/texte (POST /ai/embedding) (ADMIN seulement, vérifie doublons) |
+| `api/routes/ia.py` | `embed` | `text: str, file: UploadFile, current_user: dict` | `dict` | Indexe PDF/TXT/JSON/CSV/XLSX (POST /ai/embedding) (ADMIN seulement, vérifie doublons) |
 
 ---
 
@@ -128,7 +128,7 @@
 | `components/admin/UserForm.jsx` | `user, onSubmit, onCancel, loading` | Formulaire pour créer/modifier un utilisateur |
 | `components/admin/DeleteModal.jsx` | `isOpen, onClose, onConfirm, title, message, itemName` | Modale de confirmation de suppression |
 | `components/admin/RoleDropdown.jsx` | `value, onChange, className` | Dropdown custom pour sélection des rôles (USER/ADMIN) |
-| `components/admin/DocumentUploadForm.jsx` | `onSubmit, onCancel, loading` | Formulaire upload PDF avec drag & drop, validation (PDF, 50MB), barre de progression |
+| `components/admin/DocumentUploadForm.jsx` | `onSubmit, onCancel, loading` | Formulaire upload multi-formats (PDF/TXT/JSON/CSV/XLSX) avec drag & drop, validation (50MB), barre de progression |
 
 ### Pages Admin
 
@@ -140,7 +140,7 @@
 | `app/admin/members/page.jsx` | CRUD membres avec pagination, SideCanvas (création/modification), DeleteModal (suppression) |
 | `app/admin/conversations/page.jsx` | Liste conversations avec recherche + filtres label/sub_label/tag |
 | `app/admin/conversations/[id]/page.jsx` | Détail conversation avec user_mail et MessageList (isAdminView=true, userEmail) |
-| `app/admin/documents/page.jsx` | Gestion des embeddings de documents (liste regroupée par filename, upload, suppression) |
+| `app/admin/documents/page.jsx` | Gestion des embeddings de documents (liste regroupée par filename avec icônes par type, upload multi-formats, suppression) |
 
 ### Pages Chat
 

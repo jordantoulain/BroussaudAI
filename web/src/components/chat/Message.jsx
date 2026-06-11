@@ -56,15 +56,19 @@ export default function Message({ message, userEmail }) {
             {formatResponseText(data?.answer || text)}
           </div>
           
-          {/* Icône loupe avec tooltip contextes */}
-          {data?.contexts && data.contexts.length > 0 && (
-            <div className="relative group flex-shrink-0">
-              <Search className="w-4 h-4 text-neutral-500 cursor-help" />
-              <div className="absolute bottom-full right-0 mb-2 w-max max-w-xs p-2 bg-neutral-100 text-neutral-800 text-xs rounded-lg whitespace-nowrap z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                {data.contexts.join(', ')}
-              </div>
+        {/* Icône loupe avec tooltip contextes */}
+        {data?.contexts && data.contexts.length > 0 && (
+          <div className="relative group flex-shrink-0">
+            <Search className="w-4 h-4 text-neutral-500 cursor-help" />
+            <div className="absolute bottom-full right-0 mb-2 w-max p-2 bg-neutral-100 text-neutral-800 text-xs rounded-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              {data.contexts.map((context, index) => (
+                <div key={index} className="mb-1 last:mb-0">
+                  {context}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
         </div>
         
         {/* Tags */}

@@ -57,13 +57,16 @@
 | llama-index-llms-google-genai | Google LLM support |
 | llama-index-embeddings-google-genai | Google Embeddings |
 | llama-index-vector-stores-supabase | Supabase Vector Store |
-| llama-index-readers-file | PDF/Files reader |
+| llama-index-readers-file | PDF reader |
+| llama-index-readers-file.pandas | Pandas reader (JSON, CSV, XLSX) |
 | llama-index-llms-mistralai | Mistral LLM (optionnel) |
 | llama-index-embeddings-mistralai | Mistral Embeddings (optionnel) |
 | llama-index-llms-ollama | Ollama LLM (optionnel) |
 | llama-index-embeddings-ollama | Ollama Embeddings (optionnel) |
 | llama-index-tools-mcp | MCP tools integration |
 | google-genai | Google GenAI SDK (Gemini) |
+| pandas | Data manipulation (XLSX reader) |
+| openpyxl | Excel files support (XLSX) |
 
 ### Serveur MCP (`mcp/requirements.txt`)
 

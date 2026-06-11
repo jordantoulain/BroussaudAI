@@ -5,7 +5,7 @@ import { Upload, X, AlertCircle } from 'lucide-react'
 import { api } from '@/services/api'
 
 /**
- * Formulaire d'upload de document PDF dans un SideCanvas
+ * Formulaire d'upload de document (PDF, TXT, JSON, CSV, XLSX) dans un SideCanvas
  * 
  * @param {Object} props
  * @param {Function} props.onSubmit - Callback pour soumettre le formulaire
@@ -23,15 +23,19 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
 
   const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
+  const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.json', '.csv', '.xlsx']
+
   const validateFile = useCallback((selectedFile) => {
     if (!selectedFile) {
       setFileError('Aucun fichier sélectionné')
       return false
     }
 
-    // Vérifier que c'est un PDF
-    if (!selectedFile.name.toLowerCase().endsWith('.pdf')) {
-      setFileError('Seuls les fichiers PDF sont autorisés')
+    // Vérifier l'extension
+    const filename = selectedFile.name.toLowerCase()
+    const isValidExtension = ALLOWED_EXTENSIONS.some(ext => filename.endsWith(ext))
+    if (!isValidExtension) {
+      setFileError(`Formats autorisés : PDF, TXT, JSON, CSV, XLSX`)
       return false
     }
 
@@ -140,7 +144,7 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
       {/* Sélection de fichier */}
       <div className="space-y-4">
         <label className="block text-sm font-medium text-neutral-700">
-          Sélectionner un fichier PDF
+          Sélectionner un fichier
           <span className="text-red-500">*</span>
         </label>
 
@@ -157,7 +161,7 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept=".pdf"
+            accept=".pdf,.txt,.json,.csv,.xlsx"
             className="hidden"
             id="file-upload"
             disabled={loading || isUploading}
@@ -165,20 +169,26 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
           <label htmlFor="file-upload" className="cursor-pointer">
             {file ? (
               <div className="flex items-center justify-between gap-4">
-                <div className="text-left">
+                <div className="flex-1 min-w-0 text-left">
                   <div className="flex items-center gap-2">
-                    <Upload className="w-5 h-5 mr-2 text-neutral-500" />
-                    <div>
-                      <div className="font-medium text-neutral-800">{file.name}</div>
-                      <div className="text-xs text-neutral-500">{formatFileSize(file.size)}</div>
+                    <Upload className="w-5 h-5 mr-2 text-neutral-500 flex-shrink-0" />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-neutral-800 truncate">
+                        {file.name}
+                      </div>
+                      <div className="text-xs text-neutral-500">
+                        {formatFileSize(file.size)}
+                      </div>
                     </div>
                   </div>
                 </div>
+
                 {!isUploading && !loading && (
                   <button
                     type="button"
                     onClick={handleRemoveFile}
-                    className="p-2 cursor-pointer text-neutral-500 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                    className="flex-shrink-0 p-2 cursor-pointer text-neutral-500 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -192,7 +202,7 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
                     Glisser-déposer ou cliquer pour sélectionner
                   </div>
                   <div className="text-sm text-neutral-500">
-                    PDF uniquement (max 50MB)
+                    PDF, TXT, JSON, CSV, XLSX (max 50MB)
                   </div>
                 </div>
               </div>

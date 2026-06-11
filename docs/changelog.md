@@ -1,10 +1,12 @@
 # Changelog
 
 ## 2026-06-11
+- **Feature** : POST /ai/embedding - Support multi-formats : PDF (PDFReader), TXT (lecture directe), JSON/CSV/XLSX (PandasReader)
+- **Feature** : api/requirements.txt - Ajout dépendances pandas et openpyxl pour PandasReader
 - **Refactor** : Création composants ActionError et ActionSuccess réutilisables dans /shared/ActionAlert.jsx
 - **Refactor** : Remplacement notifications inline par ActionError/ActionSuccess dans /admin/documents/page.jsx et /admin/members/page.jsx
-- **Feature** : Ajout page /admin/documents pour gestion des embeddings de documents
-- **Feature** : DocumentUploadForm.jsx - Upload PDF avec drag & drop et validation (PDF seulement, 50MB max)
+- **Feature** : Ajout page /admin/documents pour gestion des embeddings de documents avec icônes colorées par type de fichier
+- **Feature** : DocumentUploadForm.jsx - Upload multi-formats avec drag & drop et validation (PDF/TXT/JSON/CSV/XLSX, 50MB max)
 - **Feature** : GET /admin/documents - Liste documents regroupés par filename depuis vecs.documents_gemini
 - **Feature** : DELETE /admin/documents/{filename} - Suppression de toutes les lignes (chunks) d'un fichier
 - **Feature** : POST /ai/embedding - Réservé aux ADMIN, vérifie doublons via metadata.filename

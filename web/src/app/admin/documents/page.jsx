@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/services/api'
 import { TableRowSkeleton, TextSkeleton, ActionError, ActionSuccess } from '@/components/shared'
-import { TriangleAlert, Search, Plus, Trash2, FileText, XCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TriangleAlert, Search, Plus, Trash2, FileText, FileJson, Grid3X3, File, XCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import SideCanvas from '@/components/admin/SideCanvas'
 import DeleteModal from '@/components/admin/DeleteModal'
 import DocumentUploadForm from '@/components/admin/DocumentUploadForm'
 
 /**
- * Page de gestion des documents avec pagination
+ * Page de gestion des documents (PDF, TXT, JSON, CSV, XLSX) avec pagination
  * 
  * @returns {JSX.Element}
  */
@@ -24,6 +24,24 @@ export default function AdminDocumentsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Helper pour obtenir l'icône et la couleur selon le type de fichier
+  const getFileIcon = (filename) => {
+    const ext = filename?.toLowerCase().split('.').pop()
+    switch (ext) {
+      case 'pdf':
+        return { icon: FileText, color: 'bg-red-500' }
+      case 'json':
+        return { icon: FileJson, color: 'bg-yellow-500' }
+      case 'csv':
+        return { icon: File, color: 'bg-green-500' }
+      case 'xlsx':
+        return { icon: Grid3X3, color: 'bg-emerald-500' }
+      case 'txt':
+      default:
+        return { icon: FileText, color: 'bg-blue-500' }
+    }
+  }
   
   // CRUD states
   const [showUploadCanvas, setShowUploadCanvas] = useState(false)
@@ -224,9 +242,14 @@ export default function AdminDocumentsPage() {
               documents.map((doc) => (
                 <tr key={doc.filename} className="hover:bg-neutral-200/50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="w-8 h-8 flex items-center justify-center bg-red-500 rounded-md">
-                      <FileText className="w-4 h-4 text-white" />
-                    </div>
+                    {(() => {
+                      const { icon: Icon, color } = getFileIcon(doc.filename)
+                      return (
+                        <div className={`w-8 h-8 flex items-center justify-center ${color} rounded-md`}>
+                          <Icon className="w-4 h-4 text-white" />
+                        </div>
+                      )
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                     {doc.filename || 'inconnu'}
@@ -303,7 +326,7 @@ export default function AdminDocumentsPage() {
       <SideCanvas
         isOpen={showUploadCanvas}
         onClose={closeAll}
-        title="Upload un document PDF"
+        title="Upload un document"
       >
         <DocumentUploadForm
           onSubmit={handleUploadDocument}

@@ -221,7 +221,7 @@ web/
 | DELETE | `/conversations/{id}` | ✅ | Soft-delete une conversation (is_active=false) |
 | **IA** |
 | POST | `/ai/chat` | ✅ | Chat avec RAG |
-| POST | `/ai/embedding` | ✅ | Upload document (PDF/text) - ADMIN only, vérifie doublons via metadata.filename |
+| POST | `/ai/embedding` | ✅ | Upload document (PDF/TXT/JSON/CSV/XLSX) - ADMIN only, vérifie doublons via metadata.filename |
 | **Administration** |
 | GET | `/admin/` | ✅ | Dashboard admin avec stats + timeline (ADMIN seulement) |
 | GET | `/admin/users` | ✅ | Liste utilisateurs (ADMIN seulement) |
