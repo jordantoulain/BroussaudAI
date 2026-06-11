@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, Suspense, useContext } from 'react'
-import { useSearchParams } from 'next/navigation'
-import ChatHeader from '@/components/chat/ChatHeader'
+import { useRouter, useSearchParams } from 'next/navigation'
 import MessageList from '@/components/chat/MessageList'
 import ChatInput from '@/components/chat/ChatInput'
 import { useChat } from '@/hooks/useChat'
@@ -23,6 +22,7 @@ function ChatPageContent({
   messagesEndRef
 }) {
   const { fetchConversations, selectConversation } = useContext(ConversationsContext)
+  const router = useRouter()
   const searchParams = useSearchParams()
   const conversationIdParam = searchParams.get('conversation_id')
   
@@ -30,12 +30,10 @@ function ChatPageContent({
   const [messages, setMessages] = useState(chatMessages)
   const [isLoading, setIsLoading] = useState(false)
   
-  // Synchroniser conversationId depuis l'URL
+  // Synchroniser conversationId depuis l'URL (l'URL est la source de vérité)
   useEffect(() => {
-    if (conversationIdParam !== conversationId) {
-      setConversationId(conversationIdParam || null)
-    }
-  }, [conversationIdParam, conversationId, setConversationId])
+    setConversationId(conversationIdParam || null)
+  }, [conversationIdParam, setConversationId])
 
   // Charger la conversation quand conversationId change
   useEffect(() => {
@@ -114,6 +112,8 @@ function ChatPageContent({
       
       if (response.data.conversation_id && !conversationId) {
         setConversationId(response.data.conversation_id)
+        // Refléter la conversation dans l'URL (source de vérité)
+        router.replace(`/chat?conversation_id=${response.data.conversation_id}`)
         // Sélectionner la nouvelle conversation dans la sidebar
         selectConversation?.(response.data.conversation_id)
         // Rafraîchir la liste des conversations dans la sidebar
@@ -133,7 +133,7 @@ function ChatPageContent({
     } finally {
       setIsLoading(false)
     }
-  }, [input, isLoading, conversationId, setInput, setConversationId, fetchConversations])
+  }, [input, isLoading, conversationId, setInput, setConversationId, selectConversation, fetchConversations, router])
 
   return (
     <>

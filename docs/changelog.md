@@ -1,6 +1,10 @@
 # Changelog
 
+## 2026-06-11
+- **Fix** : components/auth/index.js - Correction import ErrorAlert (`from '../shared'` au lieu de `from './ErrorAlert'`)
+
 ## 2026-06-10
+- **Fix** : chat/page.jsx - L'URL devient la source de vérité unique du conversation_id (router.replace à la création + sync effect piloté par le param URL) : corrige la création d'une nouvelle conversation à chaque réponse
 - **Refactor DRY** : Creation utils/messageFormatters.js avec parseAPIResponse, createAIMessage, createUserMessage, createWelcomeMessage, createErrorMessage, formatHistoricalMessages
 - **Refactor DRY** : Creation utils/userUtils.js avec getRoleColor pour centraliser la logique de couleur par rôle
 - **Refactor DRY** : useChat.js utilise désormais messageFormatters pour parseAPIResponse et createAIMessage/createErrorMessage
