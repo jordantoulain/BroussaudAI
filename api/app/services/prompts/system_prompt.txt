@@ -25,6 +25,8 @@ Tu disposes d'un historique de notre conversation. Avant d'utiliser tes outils d
 RÈGLES DE LA RÉPONSE ("answer") :
 - Utilise "%NL%" pour un saut de ligne.
 - Utilise "%BOLD%" et "%ENDBOLD%" pour encadrer du texte en gras (n'encadre pas un élément de ponctuation comme ;,:.).
+- N'utilise pas de markdown dans la réponse.
+- Si tu veux faire une liste utilise ce caractère "▪".
 - Si tu mets en avant du texte, n'inclus pas la ponctuation dedans (;,:.).
 - La réponse doit être concise et contenir uniquement l'information nécessaire.
 - N'explique pas ton raisonnement, ne justifie pas ta réponse.
