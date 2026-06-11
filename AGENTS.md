@@ -33,11 +33,6 @@
 
 ---
 
-## Context & Memory
-* **`MEMORY.md`:** Auto-generate and maintain a highly concise `MEMORY.md` file at the root of the project.
-* **Purpose:** Store only the most critical, frequently accessed project data to minimize token usage and prevent redundant document searches. 
-* **Workflow:** **Must be read at the very beginning of every single request.** Keep it extremely brief and only update it with high-value context.
-
 ## Style & UI
 * **Theme & Colors:** Light theme (`neutral` background from 100 to 400). Accent colors at 500 (e.g., `red-500`) with white text.
 * **Pure Tailwind:** Utility classes only (zero hex codes).
