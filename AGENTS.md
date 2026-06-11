@@ -33,7 +33,7 @@
 
 ---
 
-## 🧠 Context & Memory
+## Context & Memory
 * **`MEMORY.md`:** Auto-generate and maintain a highly concise `MEMORY.md` file at the root of the project.
 * **Purpose:** Store only the most critical, frequently accessed project data to minimize token usage and prevent redundant document searches. 
 * **Workflow:** **Must be read at the very beginning of every single request.** Keep it extremely brief and only update it with high-value context.
@@ -65,6 +65,9 @@
   * `/docs/ui.md`: Specific UI/UX rules.
   * `/docs/registry.md`: Registry of reusable functions/components (Name, Description, Path).
   * `/docs/features.md`: List of features (Description, Path, Used Components/Functions).
+
+## Version Control (Git)
+* **No Auto-Commits:** Strictly forbidden to execute `git commit` or `git push` without explicit permission.
 
 ## Security (Critical)
 * **Environment:** Strictly forbidden to read `.env` files.
