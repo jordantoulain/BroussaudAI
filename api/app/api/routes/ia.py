@@ -7,6 +7,7 @@ from llama_index.core import Document, Settings
 from llama_index.readers.file import PDFReader
 from pydantic import BaseModel
 from api.routes.auth import get_current_user
+from api.routes.admin import verify_admin
 from core.supabase_client import supabase
 from services.agent import get_rag_service, chat_with_agent
 
@@ -104,46 +105,71 @@ async def embed(
     file: UploadFile | None = File(None),
     current_user: dict = Depends(get_current_user)
 ):
+    # Vérifier que l'utilisateur est ADMIN
+    verify_admin(current_user)
+    
     if file is not None:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-            tmp.write(await file.read())
-            tmp_path = tmp.name
+        # Vérifier que c'est un PDF
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Seuls les fichiers PDF sont autorisés"
+            )
+        
+        # Vérifier si un document avec le même nom existe déjà
+        existing_response = supabase.schema("vecs").table("documents_gemini") \
+            .select("id, metadata") \
+            .execute()
+        
+        existing_documents = existing_response.data or []
+        for doc in existing_documents:
+            if doc.get("metadata", {}).get("filename") == file.filename:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Un document avec le nom '{file.filename}' existe déjà"
+                )
+        
+        async with get_rag_service() as service:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                tmp.write(await file.read())
+                tmp_path = tmp.name
 
-        try:
-            reader = PDFReader()
-            documents = reader.load_data(tmp_path)
-            
-            for doc in documents:
-                doc.metadata["filename"] = file.filename
-            
-            nodes = Settings.node_parser.get_nodes_from_documents(documents)
-            
-            for node in nodes:
-                if "filename" not in node.metadata:
-                    node.metadata["filename"] = file.filename
-            
-            index.insert_nodes(nodes)
+            try:
+                reader = PDFReader()
+                documents = reader.load_data(tmp_path)
                 
-        finally:
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
-
-        return {
-            "status": "success",
-            "type": "pdf",
-            "filename": file.filename,
-            "chunks": len(nodes)
-        }
+                for doc in documents:
+                    doc.metadata["filename"] = file.filename
+                
+                nodes = Settings.node_parser.get_nodes_from_documents(documents)
+                
+                for node in nodes:
+                    if "filename" not in node.metadata:
+                        node.metadata["filename"] = file.filename
+                
+                service.index.insert_nodes(nodes)
+                
+                return {
+                    "status": "success",
+                    "type": "pdf",
+                    "filename": file.filename,
+                    "chunks": len(nodes)
+                }
+                    
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
 
     if text:
-        doc = Document(text=text, metadata={"filename": "custom_text"})
-        index.insert(doc)
-
-        return {
-            "status": "success",
-            "type": "text",
-            "filename": "custom_text"
-        }
+        async with get_rag_service() as service:
+            doc = Document(text=text, metadata={"filename": "custom_text"})
+            service.index.insert(doc)
+            
+            return {
+                "status": "success",
+                "type": "text",
+                "filename": "custom_text"
+            }
 
     raise HTTPException(
         status_code=400,

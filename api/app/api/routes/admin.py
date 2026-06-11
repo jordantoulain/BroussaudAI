@@ -392,3 +392,89 @@ def get_conversation_admin(conversation_id: str, current_user: dict = Depends(ge
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors du chargement de la conversation: {str(e)}"
         )
+
+
+@router.get("/documents", response_model=dict)
+def list_documents(current_user: dict = Depends(get_current_user)):
+    """
+    Liste tous les documents (vecs.documents_gemini) - accessible uniquement aux ADMIN
+    Regroupe par filename car un PDF peut avoir plusieurs lignes (chunks)
+    """
+    verify_admin(current_user)
+    
+    try:
+        response = supabase.schema("vecs").table("documents_gemini") \
+            .select("id, vec, metadata") \
+            .execute()
+        
+        documents = response.data or []
+        
+        # Regrouper par filename
+        grouped_docs = {}
+        for doc in documents:
+            metadata = doc.get("metadata", {})
+            filename = metadata.get("filename", "inconnu")
+            mimetype = metadata.get("mimetype", "inconnu")
+            
+            if filename not in grouped_docs:
+                grouped_docs[filename] = {
+                    "filename": filename,
+                    "mimetype": mimetype,
+                    "chunk_count": 1,
+                    "ids": [doc["id"]]
+                }
+            else:
+                grouped_docs[filename]["chunk_count"] += 1
+                grouped_docs[filename]["ids"].append(doc["id"])
+        
+        # Convertir en liste
+        documents_list = [
+            {
+                "filename": data["filename"],
+                "mimetype": data["mimetype"],
+                "chunk_count": data["chunk_count"],
+                "ids": data["ids"]
+            }
+            for data in grouped_docs.values()
+        ]
+        
+        return {
+            "documents": documents_list,
+            "count": len(documents_list)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la récupération des documents: {str(e)}"
+        )
+
+
+@router.delete("/documents/{filename}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(filename: str, current_user: dict = Depends(get_current_user)):
+    """
+    Supprime TOUTES les lignes correspondant à un fichier (par filename dans metadata) - accessible uniquement aux ADMIN
+    Un PDF peut avoir plusieurs chunks, donc on supprime tout ce qui a ce filename
+    """
+    verify_admin(current_user)
+    
+    try:
+        # Supprimer toutes les lignes avec ce filename dans metadata
+        result = supabase.schema("vecs").table("documents_gemini") \
+            .delete() \
+            .eq("metadata->>filename", filename) \
+            .execute()
+        
+        if not result.data and result.count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Aucun document trouvé avec le nom '{filename}'"
+            )
+        
+        return {"message": f"Document '{filename}' et ses chunks supprimés avec succès"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la suppression du document: {str(e)}"
+        )

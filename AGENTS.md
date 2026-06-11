@@ -1,94 +1,76 @@
-Tu es Lead Developer et Chef de Projet technique. Ta mission : développer ce projet et maintenir la documentation (`docs/`) strictement synchronisée avec tes actions. Sois concis, cible des devs expérimentés (puces/tableaux, aucune commande générique type Git/Docker de base).
+# AGENTS.md
 
-## 🚨 Principes Fondamentaux (Priorité Absolue)
+**Layout:** ./web is the frontend, ./api is the backend, ./mcp is the mcp server.
+**Stack:** Next.js, React, TailwindCSS, Supabase, Python
 
-### 1. Réfléchis avant de coder
+## Fundamental Principles (Absolute Priority)
 
-**Ne pas supposer. Ne pas cacher la confusion. Exposer les compromis.**
+### 1. Think Before Coding
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+* **Before implementing:** State your assumptions explicitly. If uncertain, ask.
+* **Interpretations:** If multiple interpretations exist, present them - don't pick silently.
+* **Alternatives:** If a simpler approach exists, say so. Push back when warranted.
+* **Blockers:** If something is unclear, stop. Name what's confusing. Ask.
 
-Avant d'implémenter :
-- Exprimez clairement vos hypothèses. En cas de doute, posez la question.
-- S'il existe plusieurs interprétations, présentez-les toutes; ne faites pas votre choix en silence.
-- S'il existe une approche plus simple, n'hésitez pas à le dire si cela s'avère nécessaire.
-- Si quelque chose n'est pas clair, arrêtez-vous. Identifiez ce qui vous pose problème. Posez des questions.
+### 2. Simplicity First
+**Minimum code that solves the problem. Nothing speculative.**
+* **Strict necessity:** No features beyond what was asked. No abstractions for single-use code.
+* **No overengineering:** No "flexibility" or "configurability" that wasn't requested. No error handling for impossible scenarios.
+* **Conciseness:** If you write 200 lines and it could be 50, rewrite it.
+* **Golden rule:** Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-## 2. La simplicité avant tout
+### 3. Surgical Changes
+**Touch only what you must. Clean up only your own mess.**
+* **Existing code:** Don't "improve" adjacent code, comments, or formatting. Don't refactor things that aren't broken. Match existing style. If you notice unrelated dead code, mention it - don't delete it.
+* **Cleanup:** Remove imports/variables/functions that YOUR changes made unused.
+* **The test:** Every changed line should trace directly to the user's request.
 
-**Le code minimal permettant de résoudre le problème. Rien de spéculatif.**
-
-- Aucune fonctionnalité supplémentaire par rapport à ce qui avait été demandé.
-- Pas d'abstractions pour le code à usage unique.
-- Aucune « flexibilité » ni « configurabilité » qui n'ait été demandée.
-- Aucune gestion des erreurs pour les cas de figure impossibles.
-- Si vous écrivez 200 lignes alors que 50 suffiraient, réécrivez-le.
-
-Posez-vous la question suivante : « Un ingénieur expérimenté trouverait-il cela trop compliqué ? » Si oui, simplifiez.
-
-## 3. Modifications chirurgicales
-
-**Ne touche qu'à ce qui est nécessaire. N'essaie de réparer que tes propres erreurs.**
-
-Lors de la modification d'un code existant:
-- Ne « modifiez » pas le code, les commentaires ou la mise en forme des lignes adjacentes.
-- Ne modifiez pas ce qui fonctionne.
-- Adoptez le style actuel, même si vous le feriez différemment.
-- Si vous remarquez du code mort sans rapport avec le reste, signalez-le, mais ne le supprimez pas.
-
-Lorsque vos modifications créent des éléments orphelins :
-- Supprimez les importations, variables et fonctions qui ne sont plus utilisées suite à VOS modifications.
-- Ne supprimez pas le code mort existant, sauf si on vous le demande.
-
-Le test : chaque ligne modifiée doit être directement liée à la demande de l'utilisateur.
-
-## 4. Mise en œuvre axée sur les objectifs
-
-**Définir les critères de réussite. Répéter l'opération jusqu'à ce que les critères soient vérifiés.**
-
-Transformez les tâches en objectifs mesurables :
-- « Ajouter une validation » → « Rédiger des tests pour les entrées non valides, puis faire en sorte qu'ils réussissent »
-- « Corrige le bug » → « Écris un test qui le reproduise, puis fais en sorte qu'il réussisse »
-- « Refactorise X » → « Vérifier que les tests réussissent avant et après »
-
-Pour les tâches comportant plusieurs étapes, présentez brièvement votre plan :
-```
-1. [Étape] → vérifier : [cocher]
-2. [Étape] → vérifier : [cocher]
-3. [Étape] → vérifier : [cocher]
-```
-
-Des critères de réussite rigoureux permettent de travailler en autonomie. Les critères peu précis (« faire en sorte que ça marche ») nécessitent des clarifications constantes.
+### 4. Goal-Driven Execution
+**Define success criteria. Loop until verified.**
+* Transform tasks into verifiable goals (e.g., "Fix the bug" → "Write a test that reproduces it, then make it pass").
+* For multi-step tasks, state a brief plan: `1. [Step] → verify: [check]`.
+* *Strong success criteria let you loop independently.*
 
 ---
 
-### 1. SÉCURITÉ (CRITIQUE)
-* **.env** : INTERDICTION de lire/lister les fichiers secrets (`.env*`). Ignore-les.
-* **Fuites** : Si une clé/token en dur est détectée, ALERTE-MOI, supprime-la, remplace par la variable d'environnement, et documente son nom dans `docs/references.md` et `.env.example`.
+## 🧠 Context & Memory
+* **`MEMORY.md`:** Auto-generate and maintain a highly concise `MEMORY.md` file at the root of the project.
+* **Purpose:** Store only the most critical, frequently accessed project data to minimize token usage and prevent redundant document searches. 
+* **Workflow:** **Must be read at the very beginning of every single request.** Keep it extremely brief and only update it with high-value context.
 
-### 2. ARCHITECTURE DOCUMENTAIRE (`docs/`)
-Génère ou maintiens cette structure :
-* `changelog.md` : Seul endroit pour l'historique (1 ligne par action).
-* `plan.md` : Roadmap (To Do / In Progress / Done). Sépare Features et Tâches techniques.
-* `architecture.md` : Stack, flux, infra.
-* `references.md` : Clés env (noms seuls), dépendances, CLI spécifiques.
-* `registry.md` : Catalogue du code partagé/DRY (chemin + usage).
-* `features/` : 1 fichier par Feature. (NE PAS utiliser pour les tâches techniques/refacto).
-* `templates/feature_template.md` : Modèle exact ci-dessous.
+## Style & UI
+* **Theme & Colors:** Light theme (`neutral` background from 100 to 400). Accent colors at 500 (e.g., `red-500`) with white text.
+* **Pure Tailwind:** Utility classes only (zero hex codes).
+* **Custom CSS:** Only when absolutely necessary.
+* **Restrictions:** `border` and `shadow` classes are **strictly forbidden** unless explicitly requested.
 
-### 3. STANDARDS DE DÉVELOPPEMENT (CRITIQUE)
-* **État Actuel** : La doc (hors changelog) reflète l'instant T. Écrase/modifie l'existant, interdiction de créer des sections "historique" ou "ajouts".
-* **DRY & Dossiers Partagés** : Extrais le code redondant (UI/logique) dans des dossiers globaux (`components/shared/`, `lib/`) et documente IMMÉDIATEMENT dans `registry.md`.
-* **Imports** : Nettoie obligatoirement les imports (supprime inutilisés/dupliqués) à chaque modification.
-* **Style** : Tailwind CSS EXCLUSIF. Codes hexadécimaux et CSS brut interdits, Shadow et Border interdit (hormis sur demande). Pour l'UI on reste sur du sobre, blanc neutral-[100-400] et des couleurs d'accentuation à 500 (ex: red-500). Ne remodifie pas un style déjà présent sauf sur demande.
-* **Icônes** : Librairie `lucide-icons` exclusivement. `<svg>` bruts interdits SAUF s'ils contiennent des animations complexes.
-* **Dead Code** : Ne génère pas de fonctions, de code, de composants qui ne sont pas utilisés. Limite au plus le Dead Code.
-* **Version** : Avant de générer du code ou une solution, vérifie toujours si elle correspond à la version de la stack utilisé.
+## Architecture & Code
+* **DRY Principle:** Share and reuse code as much as possible.
+* **Shared Components:** Centralize reusable elements in `/shared` rather than duplicating per feature.
+* **Comments:** Limited to a single line maximum. Must be clear and concise.
 
-### 4. TEMPLATE FEATURE (`docs/templates/feature_template.md`)
-```md
-# Feature: [Nom]
-## Objectif : [1-2 phrases]
-## Composants modifiés : - [ ] `chemin/fichier` (Rôle)
-## Dépendances (Registry) : - [ ] Composants partagés utilisés
-## Routes/API : `METHOD /route`
-## Logique technique : [Points clés]
-## État : [ ] À faire | [ ] En cours | [ ] Terminée
+## Database (Supabase)
+* **IDs:** `UUID` mandatory for all primary and foreign keys.
+* **CRUD:** Mandatory implementation of both Soft-Delete (status/date) AND Hard-Delete.
+
+## Documentation (`./docs`)
+* **Auto-generation:** If the `./docs` folder or a required file is missing, **create it immediately** using the structure below.
+* **IMPORTANT:** Update on every modification to reflect the actual state of the code.
+* **Required Structure:**
+  * `/docs/changelog.md`: Real-time modification tracking with **strict format**:
+    `dd/mm/yyyy`
+    `- [feat/fix/chore/docs/style/perf/test] - Concise description`
+  * `/docs/plan.md`: Full architecture, project structure, and API routes table (`METHOD /route : description`).
+  * `/docs/references.md`: Project references (external documentation, versions, dependencies).
+  * `/docs/ui.md`: Specific UI/UX rules.
+  * `/docs/registry.md`: Registry of reusable functions/components (Name, Description, Path).
+  * `/docs/features.md`: List of features (Description, Path, Used Components/Functions).
+
+## Security (Critical)
+* **Environment:** Strictly forbidden to read `.env` files.
+* **Data Leak:** Immediately report and remove any detected API key or token.
+* **Continuous Audit:** Systematically analyze generated code at each step to validate its security.
+
+## Autoimprovement
+* Suggest to add new rules to AGENTS.md based on user input, when a change request could be generalized as a rule.
+* Suggest updates to the README.md file according to feature changes or additions
