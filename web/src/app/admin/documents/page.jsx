@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/services/api'
-import { TableRowSkeleton, TextSkeleton } from '@/components/shared'
-import { TriangleAlert, Search, Plus, Trash2, FileText, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TableRowSkeleton, TextSkeleton, ActionError, ActionSuccess } from '@/components/shared'
+import { TriangleAlert, Search, Plus, Trash2, FileText, XCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import SideCanvas from '@/components/admin/SideCanvas'
 import DeleteModal from '@/components/admin/DeleteModal'
 import DocumentUploadForm from '@/components/admin/DocumentUploadForm'
@@ -188,19 +188,8 @@ export default function AdminDocumentsPage() {
       </div>
       
       {/* Notifications */}
-      {actionError && (
-        <div className="mb-4 p-4 bg-red-500 text-white rounded-xl flex items-center gap-3">
-          <TriangleAlert className="w-5 h-5 flex-shrink-0" />
-          <span>{actionError}</span>
-        </div>
-      )}
-      
-      {actionSuccess && (
-        <div className="mb-4 p-4 bg-green-500 text-white rounded-xl flex items-center gap-3">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-          <span>{actionSuccess}</span>
-        </div>
-      )}
+      <ActionError message={actionError} />
+      <ActionSuccess message={actionSuccess} />
       
       {/* Barre de recherche */}
       <div className="relative mb-3">
