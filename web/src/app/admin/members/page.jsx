@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/services/api'
 import { TableRowSkeleton, TextSkeleton, ActionError, ActionSuccess } from '@/components/shared'
-import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2, X, ShieldBan, Check } from 'lucide-react'
 import SideCanvas from '@/components/admin/SideCanvas'
 import UserForm from '@/components/admin/UserForm'
 import DeleteModal from '@/components/admin/DeleteModal'
@@ -31,6 +31,8 @@ export default function AdminMembersPage() {
   const [editingUser, setEditingUser] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
+  const [showResetMfaModal, setShowResetMfaModal] = useState(false)
+  const [userToResetMfa, setUserToResetMfa] = useState(null)
   const [actionError, setActionError] = useState(null)
   const [actionSuccess, setActionSuccess] = useState(null)
 
@@ -135,6 +137,28 @@ export default function AdminMembersPage() {
     }
   }, [userToDelete, fetchUsers])
 
+  const handleResetMfa = useCallback(async (userId) => {
+    setActionLoading(true)
+    setActionError(null)
+    try {
+      await api.post(`/admin/users/${userId}/reset-mfa`)
+      setActionSuccess('2FA réinitialisé avec succès')
+      fetchUsers()
+      setTimeout(() => setActionSuccess(null), 3000)
+    } catch (err) {
+      setActionError(err.response?.data?.detail || 'Erreur lors de la réinitialisation du 2FA')
+    } finally {
+      setActionLoading(false)
+    }
+  }, [fetchUsers])
+
+  const confirmResetMfa = useCallback(async () => {
+    if (!userToResetMfa) return
+    await handleResetMfa(userToResetMfa.id)
+    setShowResetMfaModal(false)
+    setUserToResetMfa(null)
+  }, [userToResetMfa, handleResetMfa])
+
   const openEditCanvas = useCallback((user) => {
     setEditingUser(user)
     setShowEditCanvas(true)
@@ -151,6 +175,8 @@ export default function AdminMembersPage() {
     setEditingUser(null)
     setShowDeleteModal(false)
     setUserToDelete(null)
+    setShowResetMfaModal(false)
+    setUserToResetMfa(null)
     setActionError(null)
     setActionSuccess(null)
   }, [])
@@ -173,11 +199,12 @@ export default function AdminMembersPage() {
                 <th className="px-6 py-4"><TextSkeleton widthClass="w-20" className="h-4" /></th>
                 <th className="px-6 py-4"><TextSkeleton widthClass="w-20" className="h-4" /></th>
                 <th className="px-6 py-4"><TextSkeleton widthClass="w-20" className="h-4" /></th>
+                <th className="px-6 py-4"><TextSkeleton widthClass="w-20" className="h-4" /></th>
               </tr>
             </thead>
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <TableRowSkeleton key={i} cells={7} />
+                <TableRowSkeleton key={i} cells={8} />
               ))}
             </tbody>
           </table>
@@ -247,6 +274,7 @@ export default function AdminMembersPage() {
               <th className="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Prénom</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Rôle</th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">2FA</th>
               <th className="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -274,6 +302,15 @@ export default function AdminMembersPage() {
                         {user.role}
                       </span>
                     </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-sm flex ${
+                        user.mfa_secret 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-neutral-200 text-neutral-800'
+                      }`}>
+                        {user.mfa_secret ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex gap-2">
                         <button
@@ -282,6 +319,21 @@ export default function AdminMembersPage() {
                           title="Modifier"
                         >
                           <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setUserToResetMfa(user)
+                            setShowResetMfaModal(true)
+                          }}
+                          disabled={!user.mfa_secret}
+                          className={`p-2 rounded-lg transition-colors ${
+                            user.mfa_secret 
+                              ? 'text-neutral-600 cursor-pointer hover:text-amber-500' 
+                              : 'text-neutral-400 cursor-not-allowed opacity-50'
+                          }`}
+                          title="Réinitialiser 2FA"
+                        >
+                          <ShieldBan className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openDeleteModal(user)}
@@ -297,7 +349,7 @@ export default function AdminMembersPage() {
               })
             ) : (
               <tr>
-                <td colSpan="7" className="px-6 py-8 text-center text-sm text-neutral-500">
+                <td colSpan="8" className="px-6 py-8 text-center text-sm text-neutral-500">
                   Aucun membre trouvé
                 </td>
               </tr>
@@ -375,6 +427,19 @@ export default function AdminMembersPage() {
         />
       </SideCanvas>
       
+      {/* Modale de confirmation Reset 2FA */}
+      <DeleteModal
+        isOpen={showResetMfaModal}
+        onClose={() => {
+          setShowResetMfaModal(false)
+          setUserToResetMfa(null)
+        }}
+        onConfirm={confirmResetMfa}
+        title="Confirmer la réinitialisation 2FA"
+        message="Êtes-vous sûr de vouloir réinitialiser le 2FA pour"
+        itemName={userToResetMfa ? `${userToResetMfa.prenom} ${userToResetMfa.nom}` : ''}
+      />
+
       {/* Modale de suppression */}
       <DeleteModal
         isOpen={showDeleteModal}

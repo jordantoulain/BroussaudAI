@@ -62,6 +62,10 @@
 | `api/routes/admin.py` | `list_documents` | `current_user: dict` | `dict` | Liste documents regroupés par filename (GET /admin/documents) (ADMIN seulement) |
 | `api/routes/admin.py` | `delete_document` | `filename: str, current_user: dict` | `-` | Supprime toutes les lignes d'un fichier (DELETE /admin/documents/{filename}) (ADMIN seulement) |
 | `api/routes/ia.py` | `embed` | `text: str, file: UploadFile, current_user: dict` | `dict` | Indexe PDF/TXT/JSON/CSV/XLSX (POST /ai/embedding) (ADMIN seulement, vérifie doublons) |
+| `api/routes/mfa.py` | `enroll_mfa` | `user_id: str` | `dict` | Génère secret TOTP + QR code (POST /mfa/enroll) |
+| `api/routes/mfa.py` | `verify_mfa` | `user_id: str, code: str` | `dict` | Vérifie code TOTP et émet tokens (POST /mfa/verify) |
+| `api/routes/mfa.py` | `skip_mfa_setup` | `user_id: str` | `dict` | Passe l'étape MFA et émet tokens (POST /mfa/skip) |
+| `api/routes/mfa.py` | `get_mfa_status` | `user_id: str` | `dict` | Retourne has_mfa et is_verified (GET /mfa/status/{user_id}) |
 
 ---
 
@@ -141,6 +145,7 @@
 | `app/admin/conversations/page.jsx` | Liste conversations avec recherche + filtres label/sub_label/tag |
 | `app/admin/conversations/[id]/page.jsx` | Détail conversation avec user_mail et MessageList (isAdminView=true, userEmail) |
 | `app/admin/documents/page.jsx` | Gestion des embeddings de documents (liste regroupée par filename avec icônes par type, upload multi-formats, suppression) |
+| `app/login/mfa/page.jsx` | Page MFA pour configuration (QR code) et vérification TOTP avec option skip |
 
 ### Pages Chat
 
@@ -194,7 +199,7 @@
 
 | Chemin | Fonction/Constante | Description |
 |--------|-------------------|-------------|
-| `app/actions/auth.js` | `loginAction, registerAction, logoutAction` | Server Actions auth |
+| `app/actions/auth.js` | `loginAction, registerAction, logoutAction` | Server Actions auth - loginAction gère redirection vers /login/mfa si requires_mfa |
 | `utils/formatText.js` | `formatResponseText(text)` | Formate le texte IA avec `%NL%` et `%BOLD%/%ENDBOLD%` |
 | `utils/pageColors.js` | `PAGE_COLORS`, `getPageColor()` | Gestion centralisée des couleurs par page |
 | `utils/messageFormatters.js` | `parseAPIResponse`, `createAIMessage`, `createUserMessage`, `createWelcomeMessage`, `createErrorMessage`, `formatHistoricalMessages` | Formatage centralisé des messages chat |

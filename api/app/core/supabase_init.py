@@ -13,7 +13,10 @@ def init_db():
                         prenom VARCHAR(255) NOT NULL,
                         mail VARCHAR(255) UNIQUE NOT NULL,
                         mdp TEXT NOT NULL,
-                        role VARCHAR(50) DEFAULT 'USER'
+                        role VARCHAR(50) DEFAULT 'USER',
+                        mfa_secret TEXT,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        last_login_at TIMESTAMP WITH TIME ZONE
                     );
                 """)
                 

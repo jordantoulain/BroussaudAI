@@ -154,7 +154,7 @@ def list_users(current_user: dict = Depends(get_current_user)):
     
     try:
         response = supabase.table("users") \
-            .select("id, nom, prenom, mail, role") \
+            .select("id, nom, prenom, mail, role, mfa_secret") \
             .execute()
         
         users = response.data or []
@@ -311,6 +311,40 @@ def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la suppression de l'utilisateur: {str(e)}"
+        )
+
+
+@router.post("/users/{user_id}/reset-mfa", status_code=status.HTTP_200_OK)
+def reset_user_mfa(user_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Réinitialise le 2FA d'un utilisateur - accessible uniquement aux ADMIN
+    """
+    verify_admin(current_user)
+    
+    try:
+        # Vérifier que l'utilisateur existe
+        existing_user = supabase.table("users") \
+            .select("id") \
+            .eq("id", user_id) \
+            .execute()
+        
+        if not existing_user.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Utilisateur non trouvé"
+            )
+        
+        # Réinitialiser le secret 2FA
+        supabase.table("users") \
+            .update({"mfa_secret": None}) \
+            .eq("id", user_id) \
+            .execute()
+        
+        return {"message": "2FA réinitialisé avec succès"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la réinitialisation du 2FA: {str(e)}"
         )
 
 

@@ -7,6 +7,8 @@ PyJWT
 pydantic[email]
 tenacity
 httpx
+pyotp
+qrcode
 llama-index
 llama-index-llms-ollama
 llama-index-embeddings-ollama

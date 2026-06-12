@@ -53,3 +53,7 @@
 - Utilisation du titre RAG comme titre de conversation
 - Gestion des embeddings de documents via /admin/documents (liste, suppression par filename)
 - Upload PDF/TXT/JSON/CSV/XLSX via /ai/embedding (ADMIN only) avec vérification doublons
+- **TOTP MFA** : Implémentation complète de l'authentification à deux facteurs avec TOTP
+- **TOTP MFA** : Backend - routes /mfa/enroll, /mfa/verify, /mfa/skip, /mfa/status/{user_id}
+- **TOTP MFA** : Frontend - Page /login/mfa pour configuration et vérification
+- **TOTP MFA** : Flux utilisateur - Login → vérification MFA → accès au chat (avec option skip)

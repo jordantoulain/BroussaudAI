@@ -1,6 +1,15 @@
 # Changelog
 
 ## 2026-06-11
+- **Feature** : TOTP MFA - Backend: routes /mfa/enroll (generate secret + QR code), /mfa/verify (validate code + issue tokens), /mfa/skip (bypass MFA), /mfa/status/{user_id}
+- **Feature** : TOTP MFA - Backend: api/requirements.txt - Added pyotp, qrcode libraries
+- **Feature** : TOTP MFA - Backend: auth.py login - Check MFA status, return requires_mfa flag with user_id/has_mfa/mfa_verified
+- **Feature** : TOTP MFA - Backend: router.py - Added mfa router
+- **Feature** : TOTP MFA - Backend: Database - New table mfa_secrets (user_id, secret, is_verified, created_at)
+- **Feature** : TOTP MFA - Frontend: /login/mfa/page.jsx - MFA setup and verification page with QR code display, code input, skip option
+- **Feature** : TOTP MFA - Frontend: auth.js loginAction - Redirect to /login/mfa if requires_mfa is true
+- **Feature** : TOTP MFA - Flow: Login → if no MFA or unverified MFA → redirect to /login/mfa → user can setup/verify or skip
+- **Feature** : TOTP MFA - On successful verification/skip: issue access_token and refresh_token, redirect to /chat
 - **Feature** : POST /ai/embedding - Support multi-formats : PDF (PDFReader), TXT (lecture directe), JSON/CSV/XLSX (PandasReader)
 - **Feature** : api/requirements.txt - Ajout dépendances pandas et openpyxl pour PandasReader
 - **Refactor** : Création composants ActionError et ActionSuccess réutilisables dans /shared/ActionAlert.jsx

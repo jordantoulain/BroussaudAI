@@ -67,6 +67,8 @@
 | google-genai | Google GenAI SDK (Gemini) |
 | pandas | Data manipulation (XLSX reader) |
 | openpyxl | Excel files support (XLSX) |
+| pyotp | TOTP generation and verification |
+| qrcode | QR code generation for TOTP setup |
 
 ### Serveur MCP (`mcp/requirements.txt`)
 

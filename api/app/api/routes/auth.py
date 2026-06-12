@@ -91,30 +91,25 @@ def login(user: UserLogin, request: Request):
     if not verify_password(user.mdp, db_user["mdp"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou mot de passe incorrect.")
     
-    user_agent = request.headers.get("user-agent", "Appareil inconnu")
+    # Update last login timestamp
+    supabase.table("users").update({"last_login_at": datetime.now(timezone.utc).isoformat()}).eq("id", db_user["id"]).execute()
     
-    expire_at = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
-    try:
-        session_resp = supabase.table("sessions").insert({
+    # Check if user has MFA configured
+    has_mfa = db_user.get("mfa_secret") is not None
+    
+    # If user has MFA configured, ALWAYS require code verification
+    if has_mfa:
+        return {
+            "requires_mfa": True,
             "user_id": db_user["id"],
-            "device_info": user_agent,
-            "expires_at": expire_at
-        }).execute()
-        session_id = session_resp.data[0]["id"]
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Impossible d'initialiser la session: {e}")
-
-    token_data = {"sub": db_user["id"], "mail": db_user["mail"], "nom": db_user["nom"], "prenom": db_user["prenom"], "role": db_user.get("role", "USER")}
-    access_token = create_access_token(token_data)
+            "has_mfa": True
+        }
     
-    refresh_data = token_data.copy()
-    refresh_data.update({"session_id": session_id})
-    refresh_token = create_refresh_token(refresh_data)
-    
+    # No MFA configured yet - offer setup
     return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
+        "requires_mfa": True,
+        "user_id": db_user["id"],
+        "has_mfa": False
     }
 
 class TokenRefresh(BaseModel):
