@@ -9,7 +9,7 @@
  */
 export default function LoadingIndicator({ className = '' }) {
   return (
-    <div className={`selfstart py2 textsm italic animatepulse ${className}`}>
+    <div className={`self-start py-2 text-sm italic animate-pulse ${className}`}>
       <svg 
         className='w-7 h-7' 
         xmlns="http://www.w3.org/2000/svg" 

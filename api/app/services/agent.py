@@ -152,17 +152,6 @@ class RAGAgentService:
 # FONCTIONS UTILITAIRES
 # ============================================================================
 
-def format_source_nodes(source_nodes: list[NodeWithScore]) -> list[dict[str, Any]]:
-    return [
-        {
-            "id": node.node.node_id,
-            "content": node.text,
-            "score": round(node.score, 4) if node.score else None,
-            "metadata": node.metadata,
-        }
-        for node in source_nodes
-    ]
-
 def extract_json_from_response(text: str) -> str:
     start, end = text.find('{'), text.rfind('}')
     return text[start:end+1] if start != -1 and end != -1 else text

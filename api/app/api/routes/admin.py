@@ -66,10 +66,10 @@ def get_timeline_data():
         }
     except Exception as e:
         print(f"Error in get_timeline_data: {str(e)}")
-        return {
-            "conversations_timeline": [2, 5, 3, 7, 4, 8, 6, 3, 9, 5],
-            "messages_timeline": [10, 15, 12, 20, 18, 25, 22, 14, 30, 28]
-        }
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la récupération des données de timeline: {str(e)}"
+        )
 
 
 def get_stats():
@@ -94,13 +94,10 @@ def get_stats():
             "vectors_count": len(vectors_count.data) if vectors_count.data else 0
         }
     except Exception as e:
-        return {
-            "users_count": 0,
-            "conversations_count": 0,
-            "messages_count": 0,
-            "vectors_count": 0,
-            "error": str(e)
-        }
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la récupération des statistiques: {str(e)}"
+        )
 
 
 @router.get("/", response_model=dict)
