@@ -4,7 +4,7 @@ import { Tag } from '../components/shared/Tag'
 
 /**
  * Parse une partie de texte et gère les patterns spéciaux
- * - %SHOW_TYPE% ou %SHOW_TYPE_label% : badge avec icône
+ * - %SHOW_TYPE% : badge avec icône
  * - %BOLD%...%ENDBOLD% : texte en gras
  * 
  * @param {string} text - Texte à parser
@@ -20,21 +20,11 @@ function parseTextPart(text) {
       const tagEnd = text.indexOf('%', i + 6)
       if (tagEnd !== -1) {
         const tagContent = text.slice(i + 6, tagEnd)
-        const underscoreIndex = tagContent.indexOf('_')
         
-        if (underscoreIndex === -1) {
-          // Format: %SHOW_TYPE%
-          result.push(
-            <Tag key={`tag-${i}`} type={tagContent} />
-          )
-        } else {
-          // Format: %SHOW_TYPE_label%
-          const tagType = tagContent.slice(0, underscoreIndex)
-          const tagLabel = tagContent.slice(underscoreIndex + 1)
-          result.push(
-            <Tag key={`tag-${i}`} type={tagType} label={tagLabel} />
-          )
-        }
+        result.push(
+          <Tag key={`tag-${i}`} type={tagContent} />
+        )
+        
         
         i = tagEnd + 1
         continue
