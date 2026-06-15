@@ -8,6 +8,9 @@ from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/data", tags=["Data"])
 
+# Postes de production dans l'ordre du flux
+POSTES_ORDER = ['TRICO', 'RETOUR', 'REMAIL', 'FORM', 'QUALI', 'BROD', 'ETIQUE', 'FLUX_PROD']
+
 
 def verify_admin(current_user: dict):
     """Vérifie que l'utilisateur a le rôle ADMIN."""
@@ -44,113 +47,173 @@ def get_supabase_connection():
     return psycopg2.connect(conn_str)
 
 
+def create_stats_tables(conn):
+    """Crée les tables stats_users dans Supabase."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS stats_users (
+                date DATE NOT NULL,
+                utilisateur VARCHAR(50) NOT NULL,
+                emplacement VARCHAR(50) NOT NULL,
+                nb_operations INT NOT NULL DEFAULT 0,
+                nb_sacs_uniques INT NOT NULL DEFAULT 0,
+                qte_totale INT NOT NULL DEFAULT 0,
+                nb_deb INT NOT NULL DEFAULT 0,
+                nb_fin INT NOT NULL DEFAULT 0,
+                nb_supp_rebus INT NOT NULL DEFAULT 0,
+                nb_supp_regroupement INT NOT NULL DEFAULT 0,
+                PRIMARY KEY (date, utilisateur, emplacement)
+            );
+        """)
+
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_stats_users_date
+            ON stats_users (date);
+        """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_stats_users_utilisateur
+            ON stats_users (utilisateur);
+        """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_stats_users_emplacement
+            ON stats_users (emplacement);
+        """)
+
+        conn.commit()
+
+
+def update_stats_users(conn, mariadb_data):
+    """Met à jour la table stats_users avec les données agrégées par (date, utilisateur, poste)."""
+    stats = {}
+    for row in mariadb_data:
+        key = (row["date"], row["utilisateur"], row["emplacement"])
+        if key not in stats:
+            stats[key] = {
+                "date": row["date"],
+                "utilisateur": row["utilisateur"],
+                "emplacement": row["emplacement"],
+                "nb_operations": 0,
+                "sacs": set(),
+                "qte_totale": 0,
+                "nb_deb": 0,
+                "nb_fin": 0,
+                "nb_supp_rebus": 0,
+                "nb_supp_regroupement": 0
+            }
+
+        s = stats[key]
+        s["nb_operations"] += 1
+        s["sacs"].add(row["num_sac_parent"])
+        s["qte_totale"] += row["qte_rebus"]
+
+        if row["type"] == "DEB":
+            s["nb_deb"] += 1
+        elif row["type"] == "FIN":
+            s["nb_fin"] += 1
+        elif row["type"] == "SUPP_REBUS":
+            s["nb_supp_rebus"] += 1
+        elif row["type"] == "SUPP_REGROUPEMENT":
+            s["nb_supp_regroupement"] += 1
+
+    data_to_insert = []
+    for key, s in stats.items():
+        data_to_insert.append({
+            "date": s["date"],
+            "utilisateur": s["utilisateur"],
+            "emplacement": s["emplacement"],
+            "nb_operations": s["nb_operations"],
+            "nb_sacs_uniques": len(s["sacs"]),
+            "qte_totale": s["qte_totale"],
+            "nb_deb": s["nb_deb"],
+            "nb_fin": s["nb_fin"],
+            "nb_supp_rebus": s["nb_supp_rebus"],
+            "nb_supp_regroupement": s["nb_supp_regroupement"]
+        })
+
+    BATCH_SIZE = 500
+    updated_count = 0
+    with conn.cursor() as cur:
+        for i in range(0, len(data_to_insert), BATCH_SIZE):
+            batch = data_to_insert[i:i + BATCH_SIZE]
+            args = [(
+                d["date"],
+                d["utilisateur"],
+                d["emplacement"],
+                d["nb_operations"],
+                d["nb_sacs_uniques"],
+                d["qte_totale"],
+                d["nb_deb"],
+                d["nb_fin"],
+                d["nb_supp_rebus"],
+                d["nb_supp_regroupement"]
+            ) for d in batch]
+
+            cur.executemany("""
+                INSERT INTO stats_users
+                (date, utilisateur, emplacement, nb_operations, nb_sacs_uniques, qte_totale,
+                 nb_deb, nb_fin, nb_supp_rebus, nb_supp_regroupement)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (date, utilisateur, emplacement)
+                DO UPDATE SET
+                    nb_operations = EXCLUDED.nb_operations,
+                    nb_sacs_uniques = EXCLUDED.nb_sacs_uniques,
+                    qte_totale = EXCLUDED.qte_totale,
+                    nb_deb = EXCLUDED.nb_deb,
+                    nb_fin = EXCLUDED.nb_fin,
+                    nb_supp_rebus = EXCLUDED.nb_supp_rebus,
+                    nb_supp_regroupement = EXCLUDED.nb_supp_regroupement
+            """, args)
+            conn.commit()
+            updated_count += len(args)
+
+    return updated_count
+
+
 @router.post("/update", status_code=status.HTTP_200_OK)
-def update_flux_sac_data(current_user: dict = Depends(get_current_user)):
+def update_stats_data(current_user: dict = Depends(get_current_user)):
     """
-    Transfère les données de flux_sac de MariaDB vers Supabase.
-    Crée la table si elle n'existe pas et récupère les données des 7 derniers jours.
+    Met à jour les statistiques utilisateurs.
+    - stats_users : données des 7 derniers jours (agrégation par date, utilisateur, poste)
     Accessible uniquement aux ADMIN.
     """
     verify_admin(current_user)
-    
+
     try:
-        # Créer la table dans Supabase si elle n'existe pas
         with get_supabase_connection() as conn:
-            with conn.cursor() as cur:
-                # Créer la table
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS statistiques (
-                        num_sac_parent VARCHAR(17) NOT NULL,
-                        num_sac_enfant VARCHAR(17) DEFAULT NULL,
-                        emplacement VARCHAR(50) NOT NULL,
-                        type VARCHAR(50) NOT NULL,
-                        date DATE NOT NULL,
-                        heure VARCHAR(10) NOT NULL,
-                        utilisateur VARCHAR(50) NOT NULL,
-                        qte_rebus INTEGER NOT NULL,
-                        CONSTRAINT verrou_flux_sac UNIQUE (num_sac_parent, emplacement, type)
-                    );
-                """)
-                
-                # Créer les indexes
-                cur.execute("""
-                    CREATE UNIQUE INDEX IF NOT EXISTS verrou_flux_sac 
-                    ON statistiques (num_sac_parent, emplacement, type);
-                """)
-                
-                cur.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_fs_numsac_emplacement_type 
-                    ON statistiques (num_sac_parent, emplacement, type);
-                """)
-                
-                conn.commit()
-        
-        # Récupérer les données des 7 derniers jours depuis MariaDB
+            create_stats_tables(conn)
+
         seven_days_ago = (datetime.now() - timedelta(days=7)).date()
-        
+
         mariadb_conn = get_mariadb_connection()
+        recent_data = []
+
         try:
             with mariadb_conn.cursor() as cursor:
                 cursor.execute("""
-                    SELECT num_sac_parent, num_sac_enfant, emplacement, type, 
+                    SELECT num_sac_parent, num_sac_enfant, emplacement, type,
                            date, heure, utilisateur, qte_rebus
                     FROM flux_sac
                     WHERE date >= %s
                 """, (seven_days_ago,))
-                mariadb_data = cursor.fetchall()
+                recent_data = cursor.fetchall()
         finally:
             mariadb_conn.close()
-        
-        if not mariadb_data:
+
+        if not recent_data:
             return {"message": "Aucune donnée à transférer"}
-        
-        # Préparer les données pour insertion dans Supabase
-        data_to_insert = []
-        for row in mariadb_data:
-            data_to_insert.append({
-                "num_sac_parent": row["num_sac_parent"],
-                "num_sac_enfant": row["num_sac_enfant"],
-                "emplacement": row["emplacement"],
-                "type": row["type"],
-                "date": row["date"].isoformat() if isinstance(row["date"], datetime) else str(row["date"]),
-                "heure": row["heure"],
-                "utilisateur": row["utilisateur"],
-                "qte_rebus": row["qte_rebus"]
-            })
-        
-        # Insérer les données dans Supabase par blocs pour optimiser les performances
-        BATCH_SIZE = 1000
-        inserted_count = 0
+
+        users_updated = 0
         with get_supabase_connection() as conn:
-            with conn.cursor() as cur:
-                for i in range(0, len(data_to_insert), BATCH_SIZE):
-                    batch = data_to_insert[i:i + BATCH_SIZE]
-                    args = [(
-                        row["num_sac_parent"],
-                        row["num_sac_enfant"],
-                        row["emplacement"],
-                        row["type"],
-                        row["date"],
-                        row["heure"],
-                        row["utilisateur"],
-                        row["qte_rebus"]
-                    ) for row in batch]
-                    
-                    cur.executemany("""
-                        INSERT INTO statistiques 
-                        (num_sac_parent, num_sac_enfant, emplacement, type, date, heure, utilisateur, qte_rebus)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT ON CONSTRAINT verrou_flux_sac DO NOTHING
-                    """, args)
-                    conn.commit()
-                    inserted_count += len(args)
-        
+            users_updated = update_stats_users(conn, recent_data)
+
         return {
-            "message": "Transfert terminé avec succès",
-            "total_data": len(data_to_insert),
-            "inserted_count": inserted_count
+            "message": "Mise à jour des statistiques terminée avec succès",
+            "stats_users": {
+                "period": "7 derniers jours",
+                "updated_count": users_updated
+            }
         }
-    
+
     except pymysql.Error as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -164,117 +227,56 @@ def update_flux_sac_data(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors du transfert: {str(e)}"
+            detail=f"Erreur lors de la mise à jour: {str(e)}"
         )
 
 
 @router.post("/init", status_code=status.HTTP_200_OK)
-def init_flux_sac_data(current_user: dict = Depends(get_current_user)):
+def init_stats_data(current_user: dict = Depends(get_current_user)):
     """
-    Transfère les données initiales de flux_sac de MariaDB vers Supabase.
-    Crée la table si elle n'existe pas et récupère les données des 365 derniers jours.
+    Initialise les statistiques utilisateurs avec les données historiques (365 jours).
+    - stats_users : données des 365 derniers jours (agrégation par date, utilisateur, poste)
     Accessible uniquement aux ADMIN.
     """
     verify_admin(current_user)
-    
+
     try:
-        # Créer la table dans Supabase si elle n'existe pas
         with get_supabase_connection() as conn:
-            with conn.cursor() as cur:
-                # Créer la table
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS statistiques (
-                        num_sac_parent VARCHAR(17) NOT NULL,
-                        num_sac_enfant VARCHAR(17) DEFAULT NULL,
-                        emplacement VARCHAR(50) NOT NULL,
-                        type VARCHAR(50) NOT NULL,
-                        date DATE NOT NULL,
-                        heure VARCHAR(10) NOT NULL,
-                        utilisateur VARCHAR(50) NOT NULL,
-                        qte_rebus INTEGER NOT NULL,
-                        CONSTRAINT verrou_flux_sac UNIQUE (num_sac_parent, emplacement, type)
-                    );
-                """)
-                
-                # Créer les indexes
-                cur.execute("""
-                    CREATE UNIQUE INDEX IF NOT EXISTS verrou_flux_sac 
-                    ON statistiques (num_sac_parent, emplacement, type);
-                """)
-                
-                cur.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_fs_numsac_emplacement_type 
-                    ON statistiques (num_sac_parent, emplacement, type);
-                """)
-                
-                conn.commit()
-        
-        # Récupérer les données des 365 derniers jours depuis MariaDB
+            create_stats_tables(conn)
+
         one_year_ago = (datetime.now() - timedelta(days=365)).date()
-        
+
         mariadb_conn = get_mariadb_connection()
+        all_data = []
+
         try:
             with mariadb_conn.cursor() as cursor:
                 cursor.execute("""
-                    SELECT num_sac_parent, num_sac_enfant, emplacement, type, 
+                    SELECT num_sac_parent, num_sac_enfant, emplacement, type,
                            date, heure, utilisateur, qte_rebus
                     FROM flux_sac
                     WHERE date >= %s
+                    ORDER BY date, heure
                 """, (one_year_ago,))
-                mariadb_data = cursor.fetchall()
+                all_data = cursor.fetchall()
         finally:
             mariadb_conn.close()
-        
-        if not mariadb_data:
+
+        if not all_data:
             return {"message": "Aucune donnée à transférer"}
-        
-        # Préparer les données pour insertion dans Supabase
-        data_to_insert = []
-        for row in mariadb_data:
-            data_to_insert.append({
-                "num_sac_parent": row["num_sac_parent"],
-                "num_sac_enfant": row["num_sac_enfant"],
-                "emplacement": row["emplacement"],
-                "type": row["type"],
-                "date": row["date"].isoformat() if isinstance(row["date"], datetime) else str(row["date"]),
-                "heure": row["heure"],
-                "utilisateur": row["utilisateur"],
-                "qte_rebus": row["qte_rebus"]
-            })
-        
-        # Insérer les données dans Supabase par blocs pour optimiser les performances
-        BATCH_SIZE = 1000
-        inserted_count = 0
+
+        users_updated = 0
         with get_supabase_connection() as conn:
-            with conn.cursor() as cur:
-                for i in range(0, len(data_to_insert), BATCH_SIZE):
-                    batch = data_to_insert[i:i + BATCH_SIZE]
-                    args = [(
-                        row["num_sac_parent"],
-                        row["num_sac_enfant"],
-                        row["emplacement"],
-                        row["type"],
-                        row["date"],
-                        row["heure"],
-                        row["utilisateur"],
-                        row["qte_rebus"]
-                    ) for row in batch]
-                    
-                    cur.executemany("""
-                        INSERT INTO statistiques 
-                        (num_sac_parent, num_sac_enfant, emplacement, type, date, heure, utilisateur, qte_rebus)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT ON CONSTRAINT verrou_flux_sac DO NOTHING
-                    """, args)
-                    conn.commit()
-                    inserted_count += len(args)
-        
+            users_updated = update_stats_users(conn, all_data)
+
         return {
-            "message": "Initialisation terminée avec succès",
-            "total_data": len(data_to_insert),
-            "inserted_count": inserted_count
+            "message": "Initialisation des statistiques terminée avec succès",
+            "stats_users": {
+                "period": "365 derniers jours",
+                "updated_count": users_updated
+            }
         }
-        
+
     except pymysql.Error as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -288,5 +290,63 @@ def init_flux_sac_data(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors du transfert: {str(e)}"
+            detail=f"Erreur lors de l'initialisation: {str(e)}"
+        )
+
+
+@router.get("/stats-users", status_code=status.HTTP_200_OK)
+def get_stats_users(
+    date_debut: str = None,
+    date_fin: str = None,
+    utilisateur: str = None,
+    emplacement: str = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Récupère les statistiques utilisateurs.
+    Filtres optionnels : date_debut, date_fin, utilisateur, emplacement.
+    Accessible à tous les utilisateurs.
+    """
+    try:
+        query = "SELECT * FROM stats_users"
+        conditions = []
+        params = []
+
+        if date_debut:
+            conditions.append("date >= %s")
+            params.append(date_debut)
+        if date_fin:
+            conditions.append("date <= %s")
+            params.append(date_fin)
+        if utilisateur:
+            conditions.append("utilisateur = %s")
+            params.append(utilisateur)
+        if emplacement:
+            conditions.append("emplacement = %s")
+            params.append(emplacement)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        query += " ORDER BY date DESC, utilisateur, emplacement"
+
+        with get_supabase_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                results = cur.fetchall()
+
+        return {
+            "data": results,
+            "count": len(results)
+        }
+
+    except psycopg2.Error as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur de connexion à Supabase: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la récupération: {str(e)}"
         )
