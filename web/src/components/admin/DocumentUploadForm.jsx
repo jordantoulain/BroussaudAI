@@ -5,7 +5,7 @@ import { Upload, X, AlertCircle } from 'lucide-react'
 import { api } from '@/services/api'
 
 /**
- * Formulaire d'upload de document (PDF, TXT, JSON, CSV, XLSX) dans un SideCanvas
+ * Formulaire d'upload de document (PDF, TXT, JSON, CSV, XLSX, MD) dans un SideCanvas
  * 
  * @param {Object} props
  * @param {Function} props.onSubmit - Callback pour soumettre le formulaire
@@ -13,7 +13,7 @@ import { api } from '@/services/api'
  * @param {boolean} props.loading - Indique si un chargement est en cours
  * @returns {JSX.Element}
  */
-export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
+export default function DocumentUploadForm({ onSubmit, onCancel, loading, accept }) {
   const [file, setFile] = useState(null)
   const [fileError, setFileError] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -23,7 +23,7 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
 
   const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 
-  const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.json', '.csv', '.xlsx']
+  const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.json', '.csv', '.xlsx', '.md']
 
   const validateFile = useCallback((selectedFile) => {
     if (!selectedFile) {
@@ -35,7 +35,7 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
     const filename = selectedFile.name.toLowerCase()
     const isValidExtension = ALLOWED_EXTENSIONS.some(ext => filename.endsWith(ext))
     if (!isValidExtension) {
-      setFileError(`Formats autorisés : PDF, TXT, JSON, CSV, XLSX`)
+      setFileError(`Formats autorisés : PDF, TXT, JSON, CSV, XLSX, MD`)
       return false
     }
 
@@ -161,7 +161,7 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept=".pdf,.txt,.json,.csv,.xlsx"
+            accept=".pdf,.txt,.json,.csv,.xlsx,.md"
             className="hidden"
             id="file-upload"
             disabled={loading || isUploading}
@@ -202,7 +202,7 @@ export default function DocumentUploadForm({ onSubmit, onCancel, loading }) {
                     Glisser-déposer ou cliquer pour sélectionner
                   </div>
                   <div className="text-sm text-neutral-500">
-                    PDF, TXT, JSON, CSV, XLSX (max 50MB)
+                    PDF, TXT, JSON, CSV, XLSX, MD (max 50MB)
                   </div>
                 </div>
               </div>

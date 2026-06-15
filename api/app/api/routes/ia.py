@@ -4,13 +4,14 @@ import uuid
 import json
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, status
 from llama_index.core import Document, Settings
-from llama_index.readers.file import PandasCSVReader, PandasExcelReader
+from llama_index.readers.file import PandasCSVReader, PandasExcelReader, PDFReader, MarkdownReader
 from llama_index.readers.json import JSONReader
 from pydantic import BaseModel
 from api.routes.auth import get_current_user
 from api.routes.admin import verify_admin
 from core.supabase_client import supabase
 from services.agent import get_rag_service, chat_with_agent
+from datetime import datetime
 
 router = APIRouter(prefix="/ai", tags=["Intelligence Artificielle"])
 
@@ -45,8 +46,11 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
     
     past_interactions = history_response.data
 
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    enriched_question = f"Information système : La date et l'heure actuelles sont {current_date}.\n\nRequête de l'utilisateur : {question}"
+
     async with get_rag_service() as service:
-        rag_result = await chat_with_agent(service, question, past_interactions)
+        rag_result = await chat_with_agent(service, enriched_question, past_interactions)
 
     response_str = rag_result["response"]
 
@@ -111,14 +115,14 @@ async def embed(
     
     if file is not None:
         # Extensions autorisées
-        ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.json', '.csv', '.xlsx'}
+        ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.json', '.csv', '.xlsx', '.md'}
         filename = file.filename.lower()
         
         # Vérifier l'extension
         if not any(filename.endswith(ext) for ext in ALLOWED_EXTENSIONS):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Extensions autorisées : PDF, TXT, JSON, CSV, XLSX"
+                detail=f"Extensions autorisées : PDF, TXT, JSON, CSV, XLSX, MD"
             )
         
         # Vérifier si un document avec le même nom existe déjà
@@ -140,6 +144,10 @@ async def embed(
             if filename.endswith('.pdf'):
                 suffix = ".pdf"
                 reader = PDFReader()
+                use_reader = True
+            elif filename.endswith('.md'):
+                suffix = ".md"
+                reader = MarkdownReader()
                 use_reader = True
             elif filename.endswith('.txt'):
                 # Pour TXT, on lit directement le contenu

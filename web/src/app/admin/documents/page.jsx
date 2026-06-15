@@ -9,7 +9,7 @@ import DeleteModal from '@/components/admin/DeleteModal'
 import DocumentUploadForm from '@/components/admin/DocumentUploadForm'
 
 /**
- * Page de gestion des documents (PDF, TXT, JSON, CSV, XLSX) avec pagination
+ * Page de gestion des documents (PDF, TXT, JSON, CSV, XLSX, MD) avec pagination
  * 
  * @returns {JSX.Element}
  */
@@ -37,6 +37,8 @@ export default function AdminDocumentsPage() {
         return { icon: File, color: 'bg-green-500' }
       case 'xlsx':
         return { icon: Grid3X3, color: 'bg-emerald-500' }
+      case 'md':
+        return { icon: FileText, color: 'bg-purple-500' }
       case 'txt':
       default:
         return { icon: FileText, color: 'bg-blue-500' }
@@ -332,6 +334,7 @@ export default function AdminDocumentsPage() {
           onSubmit={handleUploadDocument}
           onCancel={closeAll}
           loading={actionLoading}
+          accept=".pdf,.txt,.json,.csv,.xlsx,.md"
         />
       </SideCanvas>
       
