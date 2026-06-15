@@ -1,8 +1,72 @@
 'use client'
 
+import { Tag } from '../components/shared/Tag'
+
+/**
+ * Parse une partie de texte et gère les patterns spéciaux
+ * - %SHOW_TYPE% ou %SHOW_TYPE_label% : badge avec icône
+ * - %BOLD%...%ENDBOLD% : texte en gras
+ * 
+ * @param {string} text - Texte à parser
+ * @returns {Array<import('react').ReactNode>} - Tableau de nœuds React
+ */
+function parseTextPart(text) {
+  const result = []
+  let i = 0
+  
+  while (i < text.length) {
+    // Gérer les tags %SHOW_TYPE% ou %SHOW_TYPE_label%
+    if (text.slice(i, i + 6) === '%SHOW_') {
+      const tagEnd = text.indexOf('%', i + 6)
+      if (tagEnd !== -1) {
+        const tagContent = text.slice(i + 6, tagEnd)
+        const underscoreIndex = tagContent.indexOf('_')
+        
+        if (underscoreIndex === -1) {
+          // Format: %SHOW_TYPE%
+          result.push(
+            <Tag key={`tag-${i}`} type={tagContent} />
+          )
+        } else {
+          // Format: %SHOW_TYPE_label%
+          const tagType = tagContent.slice(0, underscoreIndex)
+          const tagLabel = tagContent.slice(underscoreIndex + 1)
+          result.push(
+            <Tag key={`tag-${i}`} type={tagType} label={tagLabel} />
+          )
+        }
+        
+        i = tagEnd + 1
+        continue
+      }
+    }
+    
+    // Gérer le gras %BOLD%...%ENDBOLD%
+    if (text.slice(i, i + 6) === '%BOLD%') {
+      const boldEnd = text.indexOf('%ENDBOLD%', i + 6)
+      if (boldEnd !== -1) {
+        result.push(
+          <span key={`bold-${i}`} className="font-medium text-orange-400">
+            {parseTextPart(text.slice(i + 6, boldEnd))}
+          </span>
+        )
+        i = boldEnd + 9
+        continue
+      }
+    }
+    
+    // Caractère normal
+    result.push(text[i])
+    i++
+  }
+  
+  return result
+}
+
 /**
  * Formate le texte des réponses IA avec les tags spéciaux
  * - %NL% : saut de ligne
+ * - %SHOW_TYPE% ou %SHOW_TYPE_label% : badge avec icône (ex: %SHOW_TERMINE%, %SHOW_EN_COURS_En cours%)
  * - %BOLD%...%ENDBOLD% : texte en gras
  * 
  * @param {string} text - Texte à formater
@@ -13,52 +77,21 @@ export function formatResponseText(text) {
     return text
   }
 
-  // Remplacer les sauts de ligne %NL% par des <br />
-  // Diviser d'abord par %NL% pour gérer les paragraphes
+  // Diviser par %NL% pour gérer les paragraphes
   const parts = text.split('%NL%')
   
-  // Traiter chaque partie pour le gras
+  // Traiter chaque partie
   const formattedParts = parts.map((part, index) => {
     if (!part) return null
     
-    // Gérer le gras %BOLD%...%ENDBOLD%
-    const boldRegex = /%BOLD%(.*?)%ENDBOLD%/g
-    const boldMatches = []
-    let lastIndex = 0
-    let match
+    const parsed = parseTextPart(part)
     
-    while ((match = boldRegex.exec(part)) !== null) {
-      // Texte avant le gras
-      if (match.index > lastIndex) {
-        boldMatches.push(part.substring(lastIndex, match.index))
-      }
-      
-      // Texte en gras
-      boldMatches.push(
-        <span key={`bold-${match.index}-${match[0].length}`} className="font-medium text-orange-400">
-          {match[1]}
-        </span>
-      )
-      
-      lastIndex = match.index + match[0].length
+    // Si un seul élément textuel, retourner directement
+    if (parsed.length === 1 && typeof parsed[0] === 'string') {
+      return parsed[0]
     }
     
-    // Texte restant après le dernier match
-    if (lastIndex < part.length) {
-      boldMatches.push(part.substring(lastIndex))
-    }
-    
-    // Si aucun gras trouvé, retourner la partie telle quelle
-    if (boldMatches.length === 0) {
-      return part
-    }
-    
-    // Si un seul élément et que c'est une string (pas de gras), retourner la string
-    if (boldMatches.length === 1 && typeof boldMatches[0] === 'string') {
-      return boldMatches[0]
-    }
-    
-    return boldMatches
+    return parsed
   })
   
   // Construire le résultat final avec les sauts de ligne

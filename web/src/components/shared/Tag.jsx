@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, X, Loader2, Circle } from 'lucide-react'
+import { Check, X, Hourglass, Circle } from 'lucide-react'
 
 /**
  * Composant Tag pour afficher des badges avec icône et couleur
@@ -14,7 +14,7 @@ export function Tag({ type, label }) {
       defaultLabel: 'Validé'
     },
     EN_COURS: {
-      icon: Loader2,
+      icon: Hourglass,
       color: 'bg-blue-500',
       defaultLabel: 'En cours'
     },
@@ -39,7 +39,7 @@ export function Tag({ type, label }) {
       defaultLabel: 'Échec'
     },
     ATTENTE: {
-      icon: Loader2,
+      icon: Hourglass,
       color: 'bg-amber-500',
       defaultLabel: 'En attente'
     },
@@ -55,7 +55,7 @@ export function Tag({ type, label }) {
   const displayLabel = label || config.defaultLabel
 
   return (
-    <span className={`inline-flex text-white items-center px-2 py-1 rounded-md text-xs font-medium ${config.color}`}>
+    <span className={`inline-flex text-white items-center px-2 py-1 rounded-md text-xs font-medium mr-2 ${config.color}`}>
       <Icon className="w-3 h-3 mr-1" />
       {displayLabel}
     </span>
