@@ -3,6 +3,7 @@ uvicorn[standard]
 supabase
 python-multipart
 bcrypt
+pymysql
 PyJWT
 pydantic[email]
 tenacity
