@@ -23,3 +23,5 @@ llama-index-llms-google-genai
 llama-index-embeddings-google-genai
 llama-index-llms-mistralai
 llama-index-embeddings-mistralai
+llama-index-callbacks-arize-phoenix
+arize-phoenix
