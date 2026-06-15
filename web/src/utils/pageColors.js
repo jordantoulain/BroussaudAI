@@ -4,8 +4,7 @@
 
 export const PAGE_COLORS = {
   'Broussaud AI': 'bg-orange-500',
-  'Administration': 'bg-red-500',
-  'Boutique Maison Broussaud': 'bg-blue-500'
+  'Administration': 'bg-blue-500'
 }
 
 /**
@@ -14,6 +13,6 @@ export const PAGE_COLORS = {
  * @returns {string} Classe Tailwind pour la couleur de fond
  */
 export function getPageColor(page) {
-  return PAGE_COLORS[page] || 'bg-blue-500'
+  return PAGE_COLORS[page] || 'bg-neutral-400'
 }
 
