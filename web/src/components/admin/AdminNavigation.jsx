@@ -42,7 +42,7 @@ export default function AdminNavigation() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
               isActive 
                 ? 'bg-neutral-300 text-neutral-800' 
                 : 'text-neutral-700 hover:bg-neutral-200'
