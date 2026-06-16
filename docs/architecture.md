@@ -21,6 +21,7 @@
 | PyJWT | - | JWT |
 | Bcrypt | - | Hashing |
 | Pydantic | - | Validation |
+| Phoenix | - | Logger pour le debug |
 
 ### Serveur MCP
 
@@ -221,7 +222,7 @@ web/
 | DELETE | `/conversations/{id}` | ✅ | Soft-delete une conversation (is_active=false) |
 | **IA** |
 | POST | `/ai/chat` | ✅ | Chat avec RAG |
-| POST | `/ai/embedding` | ✅ | Upload document (PDF/TXT/JSON/CSV/XLSX) - ADMIN only, vérifie doublons via metadata.filename |
+| POST | `/ai/embedding` | ✅ | Upload document (PDF/TXT/JSON/CSV/XLSX/MD) - ADMIN only, vérifie doublons via metadata.filename |
 | **Administration** |
 | GET | `/admin/` | ✅ | Dashboard admin avec stats + timeline (ADMIN seulement) |
 | GET | `/admin/users` | ✅ | Liste utilisateurs (ADMIN seulement) |
@@ -239,11 +240,15 @@ web/
 
 | Tool | Description | Paramètres | Retour |
 |------|-------------|-----------|--------|
-| **hello_world** | Test basique du serveur MCP | - | `str` |
-| **get_stat_by_name** | Récupère une stat par nom | `name: str` | `dict` (name, value) |
-| **get_stats_count** | Compte total des stats | - | `int` |
-| **get_all_stats** | Liste toutes les stats | - | `List[Dict]` |
-| **get_stats_by_filter** | Stats filtrées par conditions | `filters: Dict` (ex: `{"name": "test"}`, `{"value": {"gt": 10}}`) | `List[Dict]` |
+| **get_user_stats_count** | Compte total des enregistrements dans stats_users | - | `int` |
+| **get_user_performance** | Historique détaillé des performances d'un utilisateur | `utilisateur: str`, `limit_days: int=7` | `List[Dict]` |
+| **get_daily_summary** | Bilan complet de production pour une date | `date: str` | `List[Dict]` |
+| **get_user_stats_by_filter** | Stats utilisateur filtrées | `filters: Dict` | `List[Dict]` |
+| **get_top_performers** | Top performeurs (opérateurs les plus productifs) | - | `List[Dict]` |
+| **get_quality_alerts** | Alertes qualité basées sur les données | - | `List[Dict]` |
+| **get_period_summary** | Résumé périodique des statistiques | - | `List[Dict]` |
+| **get_aggregated_stats_by_user** | Stats agrégées par utilisateur | - | `List[Dict]` |
+| **get_aggregated_stats_by_emplacement** | Stats agrégées par poste/emplacement | - | `List[Dict]` |
 
 ---
 

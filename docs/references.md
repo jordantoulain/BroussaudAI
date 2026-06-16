@@ -69,6 +69,7 @@
 | openpyxl | Excel files support (XLSX) |
 | pyotp | TOTP generation and verification |
 | qrcode | QR code generation for TOTP setup |
+| phoenix | Logger pour le debug et le suivi des requêtes |
 
 ### Serveur MCP (`mcp/requirements.txt`)
 

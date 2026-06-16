@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-16
+- [perf] - Optimisation du background : passage CPU vers GPU, retrait du suivi de la souris (AnimatedBackground.jsx)
+- [feat] - Refactor pour build Next.js : extraction de MFAClient.jsx depuis login/mfa/page.jsx
+- [refactor] - web/src/app/layout.js : mise à jour pour optimisation background
+
+## 2026-06-15
+- [refactor] - Changement couleurs pages (pageColors.js)
+- [chore] - Remove : Route non utilisée (api/app/api/routes/data.py supprimé)
+- [chore] - Debug: Ajout logger Phoenix (main.py, requirements.txt, docker-compose.yml)
+- [refactor] - Modification du system prompt (system_prompt.txt)
+- [fix] - Retrait label + tags pour garder uniquement tags
+- [feat] - Ajout support des documents .md (Markdown) pour l'embedding
+- [feat] - Gestion stats utilisateur + intégration MCP renforcée
+- [chore] - Remove : Retrait de fichiers non utilisés
+
 ## 2026-06-11
 - **Feature** : TOTP MFA - Backend: routes /mfa/enroll (generate secret + QR code), /mfa/verify (validate code + issue tokens), /mfa/skip (bypass MFA), /mfa/status/{user_id}
 - **Feature** : TOTP MFA - Backend: api/requirements.txt - Added pyotp, qrcode libraries

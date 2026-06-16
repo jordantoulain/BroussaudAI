@@ -14,7 +14,8 @@
 | `services/agent.py` | Service agent RAG avec LlamaIndex, intégration MCP | `from services.agent import RAGConfig, RAGAgentService, chat_with_agent, get_rag_service` |
 | `api/routes/admin.py` | Routes administration avec protection rôle ADMIN | Accès administratif |
 | `api/routes/conversations.py` | Routes conversations utilisateur (non-admin) | GET /conversations, GET /conversations/{id}, GET /conversations/archives, DELETE /conversations/{id} |
-| `api/routes/ia.py` | Routes IA avec RAG | POST /ai/chat (chat avec agent), POST /ai/embedding (indexation PDF/TXT/JSON/CSV/XLSX) |
+| `api/routes/ia.py` | Routes IA avec RAG | POST /ai/chat (chat avec agent), POST /ai/embedding (indexation PDF/TXT/JSON/CSV/XLSX/MD) |
+| `app/main.py` | Configuration principale avec Logger Phoenix | Point d'entrée FastAPI |
 
 ## Serveur MCP
 
@@ -23,18 +24,22 @@
 | Chemin | Description | Utilisation |
 |--------|-------------|-------------|
 | `mcp/app/core/supabase_client.py` | Client Supabase (schema public, timeout 10s) | `from core import supabase` |
-| `mcp/app/tools/__init__.py` | Exports centralisés des outils MCP | `from tools import hello_world, get_stat_by_name, get_stats_count, get_all_stats, get_stats_by_filter` |
+| `mcp/app/tools/__init__.py` | Exports centralisés des outils MCP | `from tools import get_user_stats_count, get_user_performance, get_daily_summary, get_user_stats_by_filter, get_top_performers, get_quality_alerts, get_period_summary, get_aggregated_stats_by_user, get_aggregated_stats_by_emplacement` |
 | `mcp/app/server.py` | Instance FastMCP + registration des outils | Point d'entrée: `mcp.http_app()` |
 
 ### Fonctions Outils MCP
 
 | Module | Fonction | Paramètres | Retour | Description |
 |--------|----------|------------|--------|-------------|
-| `mcp/app/tools/hello_world.py` | `hello_world` | - | `str` | Test basique |
-| `mcp/app/tools/stats.py` | `get_stat_by_name` | `name: str` | `dict` | Stat par nom (select name, value) |
-| `mcp/app/tools/stats_utils.py` | `get_stats_count` | - | `int` | Compte total stats |
-| `mcp/app/tools/stats_utils.py` | `get_all_stats` | - | `List[Dict]` | Toutes les stats |
-| `mcp/app/tools/stats_utils.py` | `get_stats_by_filter` | `filters: Dict[str, Union[str, int, float, Dict]]` | `List[Dict]` | Stats filtrées (opérateurs: eq, gt, gte, lt, lte) |
+| `mcp/app/tools/stats.py` | `get_user_stats_count` | - | `int` | Compte total des enregistrements dans stats_users |
+| `mcp/app/tools/stats.py` | `get_user_performance` | `utilisateur: str, limit_days: int=7` | `List[Dict]` | Historique détaillé des performances d'un utilisateur |
+| `mcp/app/tools/stats.py` | `get_daily_summary` | `date: str` | `List[Dict]` | Bilan complet de production pour une date spécifique |
+| `mcp/app/tools/stats.py` | `get_user_stats_by_filter` | `filters: Dict` | `List[Dict]` | Stats utilisateur filtrées par conditions |
+| `mcp/app/tools/stats.py` | `get_top_performers` | - | `List[Dict]` | Top performeurs (opérateurs les plus productifs) |
+| `mcp/app/tools/stats.py` | `get_quality_alerts` | - | `List[Dict]` | Alertes qualité basées sur les données |
+| `mcp/app/tools/stats.py` | `get_period_summary` | - | `List[Dict]` | Résumé périodique des statistiques |
+| `mcp/app/tools/stats.py` | `get_aggregated_stats_by_user` | - | `List[Dict]` | Stats agrégées par utilisateur |
+| `mcp/app/tools/stats.py` | `get_aggregated_stats_by_emplacement` | - | `List[Dict]` | Stats agrégées par poste/emplacement |
 
 ### Fonctions
 
@@ -59,6 +64,7 @@
 | `services/agent.py` | `format_source_nodes` | `source_nodes: list[NodeWithScore]` | `list[dict]` | Formate les nodes source avec id, content, score, metadata |
 | `services/agent.py` | `extract_json_from_response` | `text: str` | `str` | Extrait JSON brut d'une réponse textuelle |
 | `services/agent.py` | Intercepteur Gemini | Patching de `google.genai._transformers.t_schema` | Nettoie additionalProperties des schemas |
+| `app/main.py` | Logger Phoenix | Configuration du logger pour le debug | Journalisation des requêtes et erreurs |
 | `api/routes/admin.py` | `list_documents` | `current_user: dict` | `dict` | Liste documents regroupés par filename (GET /admin/documents) (ADMIN seulement) |
 | `api/routes/admin.py` | `delete_document` | `filename: str, current_user: dict` | `-` | Supprime toutes les lignes d'un fichier (DELETE /admin/documents/{filename}) (ADMIN seulement) |
 | `api/routes/ia.py` | `embed` | `text: str, file: UploadFile, current_user: dict` | `dict` | Indexe PDF/TXT/JSON/CSV/XLSX (POST /ai/embedding) (ADMIN seulement, vérifie doublons) |
@@ -84,6 +90,8 @@
 | `components/shared/Skeleton.jsx` | `ConversationCardSkeleton` | Skeleton pour carte de conversation |
 | `components/shared/ActionAlert.jsx` | `ActionError` | Alerte erreur réutilisable (icône TriangleAlert, fond rouge-500) |
 | `components/shared/ActionAlert.jsx` | `ActionSuccess` | Alerte succès réutilisable (icône CheckCircle2, fond green-500) |
+| `components/shared/Tag.jsx` | `tag` | Badge pour afficher un tag avec style cohérent |
+| `components/shared/ErrorAlert.jsx` | `error, className` | Alerte erreur (déplacé de components/auth/) |
 | `components/ui/Dropdown.jsx` | `buttonContent, buttonClassName, menuClassName, children` | Dropdown générique |
 
 ### Composants Auth
@@ -155,6 +163,7 @@
 | `app/chat/page.jsx` | Page principale du chat avec chargement messages historiques |
 | `app/chat/archives/page.jsx` | Liste des conversations archivées (grille responsive, recherche, pagination) |
 | `app/chat/archives/[id]/page.jsx` | Détail d'une conversation archivée (lecture seule) |
+| `app/login/mfa/MFAClient.jsx` | Composant client pour la gestion MFA (QR code, vérification, skip) |
 
 ### Hooks
 
