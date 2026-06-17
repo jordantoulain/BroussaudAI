@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-17
+- [refactor] - Séparation de api/app/services/agent.py en modules modulaire pour améliorer maintenabilité
+- [refactor] - Création config.py : RAGConfig pour la configuration
+- [refactor] - Création prompts.py : PromptManager pour la gestion des prompts
+- [refactor] - Création utils.py : extract_json_from_response + patch Gemini
+- [refactor] - Création pdf_generator.py : PDFGenerator + fonctions de génération et upload
+- [refactor] - Création rag_service.py : RAGAgentService + outils RAG/PDF
+- [refactor] - Création agent_orchestrator.py : chat_with_agent + orchestration
+- [refactor] - agent.py devient un point d'entrée propre avec backward compatibility
+- [docs] - Mise à jour registry.md avec la nouvelle architecture modulaire
+
 ## 2026-06-16
 - [perf] - Optimisation du background : passage CPU vers GPU, retrait du suivi de la souris (AnimatedBackground.jsx)
 - [feat] - Refactor pour build Next.js : extraction de MFAClient.jsx depuis login/mfa/page.jsx

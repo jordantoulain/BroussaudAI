@@ -21,6 +21,7 @@
 | ✅ | Moyenne | Refactoring responsive | Sidebar mobile, overlay |
 | ✅ | Moyenne | Serveur MCP | FastMCP + Supabase (tools: stats, hello_world) |
 | ✅ | Moyenne | Gestion archives | Fonctionnalités d'archivage des conversations utilisateur |
+| ✅ | Moyenne | Refactoring services | Séparation de agent.py en modules modulaire (config, prompts, utils, pdf_generator, rag_service, agent_orchestrator) |
 | ⬜ | Moyenne | Sécurité | Rate limiting, CSRF protection |
 | ⬜ | Basse | Tests | Tests unitaires et d'intégration |
 
@@ -57,3 +58,4 @@
 - **TOTP MFA** : Backend - routes /mfa/enroll, /mfa/verify, /mfa/skip, /mfa/status/{user_id}
 - **TOTP MFA** : Frontend - Page /login/mfa pour configuration et vérification
 - **TOTP MFA** : Flux utilisateur - Login → vérification MFA → accès au chat (avec option skip)
+- **Refactoring services** : Séparation de agent.py (27KB) en 7 modules modulaire avec backward compatibility

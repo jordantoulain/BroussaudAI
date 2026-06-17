@@ -11,7 +11,13 @@
 | `core/supabase_client.py` | Client Supabase configuré | `from core.supabase_client import supabase` |
 | `core/supabase_init.py` | Initialisation tables DB | Appelé au startup |
 | `core/llm.py` | Configuration LLM/Embeddings | Importé au démarrage |
-| `services/agent.py` | Service agent RAG avec LlamaIndex, intégration MCP | `from services.agent import RAGConfig, RAGAgentService, chat_with_agent, get_rag_service` |
+| `services/agent.py` | Point d'entrée principal pour les services agent (backward compatible) | `from services.agent import RAGConfig, RAGAgentService, chat_with_agent, get_rag_service` |
+| `services/config.py` | Configuration RAG | `RAGConfig` dataclass avec paramètres depuis env |
+| `services/prompts.py` | Gestion des prompts | `PromptManager` pour charger les templates de prompts |
+| `services/utils.py` | Fonctions utilitaires | `extract_json_from_response`, patch Gemini schema |
+| `services/pdf_generator.py` | Génération PDF | `PDFGenerator`, `generate_conversation_pdf_link`, `upload_to_supabase_storage` |
+| `services/rag_service.py` | Service RAG | `RAGAgentService`, `get_rag_tool`, `get_pdf_tool`, contexte async |
+| `services/agent_orchestrator.py` | Orchestration agent | `chat_with_agent` avec intégration MCP |
 | `api/routes/admin.py` | Routes administration avec protection rôle ADMIN | Accès administratif |
 | `api/routes/conversations.py` | Routes conversations utilisateur (non-admin) | GET /conversations, GET /conversations/{id}, GET /conversations/archives, DELETE /conversations/{id} |
 | `api/routes/ia.py` | Routes IA avec RAG | POST /ai/chat (chat avec agent), POST /ai/embedding (indexation PDF/TXT/JSON/CSV/XLSX/MD) |
@@ -56,15 +62,15 @@
 | `api/routes/admin.py` | `update_user` | `user_id: str, user_data: dict, current_user: dict` | `dict` | Met à jour utilisateur (PUT /admin/users/{id}) (ADMIN seulement) |
 | `api/routes/admin.py` | `delete_user` | `user_id: str, current_user: dict` | `-` | Supprime utilisateur (DELETE /admin/users/{id}) (ADMIN seulement) |
 | `api/routes/admin.py` | `get_timeline_data` | - | `dict` | Génère timeline 10 jours pour conversations et messages |
-| `services/agent.py` | `RAGConfig` | Dataclass de configuration (collection_name, dimension, similarity_top_k, mcp_server_url, prompts_dir) |
-| `services/agent.py` | `PromptManager` | Gestionnaire de prompts (load_prompt, get_prompt_template) |
-| `services/agent.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool, get_pdf_tool |
-| `services/agent.py` | `get_rag_service` | Contexte async pour RAGAgentService |
-| `services/agent.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP + PDF), historique, retourne `response`, `context` |
-| `services/agent.py` | `PDFGenerator` | Classe utilitaire avec generate_conversation_pdf, upload_to_supabase_storage |
-| `services/agent.py` | `generate_conversation_pdf_link` | `chat_history: list` | `str` (JSON) | Génère PDF et retourne JSON avec `url` et `filename` |
-| `services/agent.py` | `extract_json_from_response` | `text: str` | `str` | Extrait JSON brut d'une réponse textuelle |
-| `services/agent.py` | Intercepteur Gemini | Patching de `google.genai._transformers.t_schema` | Nettoie additionalProperties des schemas |
+| `services/config.py` | `RAGConfig` | Dataclass de configuration (collection_name, dimension, similarity_top_k, mcp_server_url, prompts_dir) |
+| `services/prompts.py` | `PromptManager` | Gestionnaire de prompts (load_prompt, get_prompt_template) |
+| `services/rag_service.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool, get_pdf_tool |
+| `services/rag_service.py` | `get_rag_service` | Contexte async pour RAGAgentService |
+| `services/agent_orchestrator.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP + PDF), historique, retourne `response`, `context` |
+| `services/pdf_generator.py` | `PDFGenerator` | Classe utilitaire avec generate_conversation_pdf, upload_to_supabase_storage |
+| `services/pdf_generator.py` | `generate_conversation_pdf_link` | `chat_history: list` | `str` (JSON) | Génère PDF et retourne JSON avec `url` et `filename` |
+| `services/utils.py` | `extract_json_from_response` | `text: str` | `str` | Extrait JSON brut d'une réponse textuelle |
+| `services/utils.py` | Intercepteur Gemini | Patching de `google.genai._transformers.t_schema` | Nettoie additionalProperties des schemas |
 | `app/main.py` | Logger Phoenix | Configuration du logger pour le debug | Journalisation des requêtes et erreurs |
 | `api/routes/admin.py` | `list_documents` | `current_user: dict` | `dict` | Liste documents regroupés par filename (GET /admin/documents) (ADMIN seulement) |
 | `api/routes/admin.py` | `delete_document` | `filename: str, current_user: dict` | `-` | Supprime toutes les lignes d'un fichier (DELETE /admin/documents/{filename}) (ADMIN seulement) |

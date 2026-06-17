@@ -19,9 +19,9 @@
 
 | Feature | Description | Path | Composants/Fonctions utilisés |
 |---------|-------------|------|--------------------------------|
-| Chat RAG | Discussion avec IA spécialisée sur l'usine textile Broussaud, classification automatique | `api/app/api/routes/ia.py`, `web/src/app/chat/page.jsx` | `RAGAgentService`, `chat_with_agent`, `format_source_nodes`, `useChat.js` |
+| Chat RAG | Discussion avec IA spécialisée sur l'usine textile Broussaud, classification automatique | `api/app/services/agent_orchestrator.py`, `api/app/services/rag_service.py`, `web/src/app/chat/page.jsx` | `RAGAgentService`, `chat_with_agent`, `format_source_nodes`, `useChat.js` |
 | Historique des conversations | Sauvegarde et chargement des messages historiques | `api/app/api/routes/conversations.py`, `web/src/app/chat/page.jsx` | `useConversations.js`, `ConversationList.jsx`, `ConversationItem.jsx` |
-| Classification automatique | Labels, sous-labels et tags générés par l'IA | `api/app/services/agent.py`, `web/src/components/chat/Message.jsx` | `extract_json_from_response`, `TagBadge.jsx` |
+| Classification automatique | Labels, sous-labels et tags générés par l'IA | `api/app/services/utils.py`, `api/app/services/agent_orchestrator.py`, `web/src/components/chat/Message.jsx` | `extract_json_from_response`, `TagBadge.jsx` |
 | Affichage des contexts | Visualisation des sources RAG utilisées pour les réponses | `web/src/components/chat/Message.jsx` | `formatText.js`, icône Search (loupe) |
 | Formatage riche | Support de `%NL%` (sauts de ligne) et `%BOLD%/%ENDBOLD%` (gras) | `web/src/utils/formatText.js` | `formatResponseText()` |
 
@@ -30,7 +30,7 @@
 | Feature | Description | Path | Composants/Fonctions utilisés |
 |---------|-------------|------|--------------------------------|
 | Upload multi-formats | Upload de documents PDF, TXT, JSON, CSV, XLSX, MD | `api/app/api/routes/ia.py`, `web/src/app/admin/documents/page.jsx` | `PDFReader`, `PandasReader`, `DocumentUploadForm.jsx` |
-| Indexation vectorielle | Stockage dans Supabase Vector Store (documents_gemini) | `api/app/services/agent.py` | `SupabaseVectorStore`, `VectorStoreIndex` |
+| Indexation vectorielle | Stockage dans Supabase Vector Store (documents_gemini) | `api/app/services/rag_service.py` | `SupabaseVectorStore`, `VectorStoreIndex` |
 | Vérification des doublons | Empêcher l'upload de documents déjà indexés | `api/app/api/routes/ia.py` | Vérification via `metadata.filename` |
 | Gestion des embeddings | Liste et suppression des documents indexés | `api/app/api/routes/admin.py` | `list_documents`, `delete_document` |
 
@@ -139,4 +139,4 @@
 - **Frontend Pages**: 15+
 - **Composants Réutilisables**: 40+
 - **Hooks**: 5
-- **Services**: 3
+- **Services**: 7

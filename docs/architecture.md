@@ -73,7 +73,14 @@ api/
 │       ├── supabase_client.py # Client Supabase
 │       └── supabase_init.py # Initialisation DB + tables
 └── services/
-    ├── agent.py           # Service agent RAG avec LlamaIndex (RAGConfig, PromptManager, RAGAgentService), intégration MCP, FunctionAgent
+    ├── __init__.py        # Exports centralisés de tous les modules
+    ├── agent.py           # Point d'entrée principal (backward compatible)
+    ├── config.py          # RAGConfig - Configuration du service RAG
+    ├── prompts.py         # PromptManager - Gestion des templates de prompts
+    ├── utils.py           # Fonctions utilitaires + patch Gemini
+    ├── pdf_generator.py  # PDFGenerator - Génération de PDF et upload Supabase
+    ├── rag_service.py     # RAGAgentService - Service RAG avec vector store et outils
+    ├── agent_orchestrator.py # Orchestration de l'agent (chat_with_agent)
     └── prompts/           # Fichiers prompts (qa_prompt.txt, system_prompt.txt)
 ```
 
