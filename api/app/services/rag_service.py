@@ -93,7 +93,12 @@ class RAGAgentService:
         Returns:
             FunctionTool for generating conversation PDFs
         """
-        async def _generate_pdf() -> str:
+        async def _generate_pdf(action: str) -> str:
+            """
+            Args:
+                action: L'action à exécuter, doit toujours être 'generate_pdf'
+            """
+            # On ignore l'argument 'action' puisqu'il ne sert qu'à berner le LLM
             return await generate_conversation_pdf_link(chat_history)
         
         return FunctionTool.from_defaults(
@@ -102,7 +107,7 @@ class RAGAgentService:
             description=(
                 "Génère un fichier PDF contenant toute la conversation actuelle. "
                 "Retourne un JSON avec l'URL et le nom du fichier : {\"url\": \"...\", \"filename\": \"...\"}. "
-                "UTILISE CET OUTIL lorsque l'utilisateur demande explicitement un export, "
+                "UTILISE CET OUTIL OBLIGATOIREMENT lorsque l'utilisateur demande explicitement un export, "
                 "un téléchargement, ou un PDF de la conversation."
             ),
         )

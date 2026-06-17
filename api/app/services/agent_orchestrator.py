@@ -20,7 +20,8 @@ from .utils import extract_json_from_response
 async def chat_with_agent(
     service: RAGAgentService,
     query: str,
-    chat_history: Optional[list[dict[str, str]]] = None
+    chat_history: Optional[list[dict[str, str]]] = None,
+    long_history: Optional[list[dict[str, str]]] = None
 ) -> dict[str, Any]:
     """
     Execute a chat query with the agent.
@@ -37,8 +38,9 @@ async def chat_with_agent(
     
     # Add PDF tool if history is available
     history = chat_history or []
-    if history:
-        local_tools.append(service.get_pdf_tool(history))
+    
+    if long_history:
+        local_tools.append(service.get_pdf_tool(long_history))
     
     # Load MCP tools if available
     try:
