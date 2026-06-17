@@ -23,7 +23,6 @@ def verify_admin(current_user: dict):
 
 def get_mariadb_connection():
     """Établit une connexion à la base MariaDB."""
-    print(os.environ.get("MARIADB_DATABASE", ""))
     conn = pymysql.connect(
         host=os.environ.get("MARIADB_HOST", "localhost"),
         port=int(os.environ.get("MARIADB_PORT", 3306)),

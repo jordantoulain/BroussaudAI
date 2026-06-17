@@ -61,8 +61,6 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
 
     response_str = rag_result["response"]
 
-    print(rag_result)
-
     label = "RAG"
     sub_label = "GENERAL"
     tags = []
@@ -101,8 +99,6 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
         "response": final_answer,
         "file": file_data
     }
-
-    print(log_data)
 
     try:
         # Insérer le message et récupérer l'ID
