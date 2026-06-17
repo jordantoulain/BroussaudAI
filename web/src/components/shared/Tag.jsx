@@ -55,7 +55,7 @@ export function Tag({ type, label }) {
   const displayLabel = label || config.defaultLabel
 
   return (
-    <span className={`inline-flex text-white items-center px-2 py-1 rounded-md text-xs font-medium mx-2 ${config.color}`}>
+    <span className={`inline-flex text-white items-center px-2 py-1 rounded-md text-xs font-medium mr-2 ${config.color}`}>
       <Icon className="w-3 h-3 mr-1" />
       {displayLabel}
     </span>
