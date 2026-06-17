@@ -4,6 +4,31 @@ import { Search, FileText } from 'lucide-react'
 import TagBadge from './TagBadge'
 import MessageMeta from './MessageMeta'
 import { formatResponseText } from '@/utils/formatText'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
+
+/**
+ * Nettoie le texte pour préparer l'affichage markdown
+ * Remplace les balises HTML par leur équivalent markdown
+ */
+function prepareMarkdownText(text) {
+  if (!text || typeof text !== 'string') {
+    return ''
+  }
+  
+  let cleaned = text
+  
+  // Remplacer les balises HTML par du markdown
+  cleaned = cleaned.replace(/<br\s*\/?>/gi, '\n\n')
+  cleaned = cleaned.replace(/<\/p>/gi, '\n\n')
+  cleaned = cleaned.replace(/<p>/gi, '')
+  
+  // Remplacer les espaces insécables
+  cleaned = cleaned.replace(/&nbsp;/gi, ' ')
+  
+  return cleaned
+}
 
 /**
  * Composant molécule pour afficher un message (utilisateur ou IA)
@@ -55,8 +80,13 @@ export default function Message({ message, userEmail }) {
         
         {/* Réponse avec icône de contexte */}
         <div className="flex items-start gap-2">
-          <div className="flex-1 text-neutral-800 font-light">
-            {formatResponseText(data?.answer || data?.response || message.response || text)}
+          <div className="flex-1 text-neutral-800 font-light markdown-content">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]} 
+              rehypePlugins={[rehypeRaw]}
+            >
+              {prepareMarkdownText(data?.answer || data?.response || message.response || text || '')}
+            </ReactMarkdown>
           </div>
           
         {/* Icône loupe avec tooltip contextes */}
