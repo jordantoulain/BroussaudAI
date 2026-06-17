@@ -56,6 +56,7 @@ export default function AdminConversationDetailPage() {
                 sub_label: msg.sub_label || 'GENERAL',
                 tags: msg.tags || [],
                 contexts: msg.contexts || [],
+                file: msg.file || [],
                 answer: msg.response
               },
               isClient: false
@@ -64,6 +65,7 @@ export default function AdminConversationDetailPage() {
           
           return messages
         })
+
         setMessages(formattedMessages)
       } catch (err) {
         console.error('Erreur chargement conversation:', err)

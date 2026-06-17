@@ -58,10 +58,11 @@
 | `api/routes/admin.py` | `get_timeline_data` | - | `dict` | Génère timeline 10 jours pour conversations et messages |
 | `services/agent.py` | `RAGConfig` | Dataclass de configuration (collection_name, dimension, similarity_top_k, mcp_server_url, prompts_dir) |
 | `services/agent.py` | `PromptManager` | Gestionnaire de prompts (load_prompt, get_prompt_template) |
-| `services/agent.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool |
+| `services/agent.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool, get_pdf_tool |
 | `services/agent.py` | `get_rag_service` | Contexte async pour RAGAgentService |
-| `services/agent.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP), historique, retourne `response`, `context` |
-| `services/agent.py` | `format_source_nodes` | `source_nodes: list[NodeWithScore]` | `list[dict]` | Formate les nodes source avec id, content, score, metadata |
+| `services/agent.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP + PDF), historique, retourne `response`, `context` |
+| `services/agent.py` | `PDFGenerator` | Classe utilitaire avec generate_conversation_pdf, upload_to_supabase_storage |
+| `services/agent.py` | `generate_conversation_pdf_link` | `chat_history: list` | `str` (JSON) | Génère PDF et retourne JSON avec `url` et `filename` |
 | `services/agent.py` | `extract_json_from_response` | `text: str` | `str` | Extrait JSON brut d'une réponse textuelle |
 | `services/agent.py` | Intercepteur Gemini | Patching de `google.genai._transformers.t_schema` | Nettoie additionalProperties des schemas |
 | `app/main.py` | Logger Phoenix | Configuration du logger pour le debug | Journalisation des requêtes et erreurs |

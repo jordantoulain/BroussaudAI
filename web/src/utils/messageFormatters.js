@@ -48,6 +48,7 @@ export function createAIMessage(data) {
       sub_label: data.sub_label || 'ACCUEIL',
       tags: data.tags || [],
       contexts: data.contexts || [],
+      file: data.file || [],
       answer: data.answer || data
     },
     isClient: false
@@ -120,6 +121,7 @@ export function formatHistoricalMessages(apiMessages) {
       sub_label: msg.sub_label || 'HISTORIQUE',
       tags: msg.tags || [],
       contexts: msg.contexts || [],
+      file: msg.file || [],
       answer: msg.response
     },
     isClient: false

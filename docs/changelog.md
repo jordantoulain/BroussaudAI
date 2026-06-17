@@ -4,6 +4,7 @@
 - [perf] - Optimisation du background : passage CPU vers GPU, retrait du suivi de la souris (AnimatedBackground.jsx)
 - [feat] - Refactor pour build Next.js : extraction de MFAClient.jsx depuis login/mfa/page.jsx
 - [refactor] - web/src/app/layout.js : mise à jour pour optimisation background
+- [feat] - Ajout outil de génération PDF des conversations (agent.py, requirements.txt)
 
 ## 2026-06-15
 - [refactor] - Changement couleurs pages (pageColors.js)

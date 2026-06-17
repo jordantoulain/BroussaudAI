@@ -40,6 +40,7 @@ def init_db():
                         tags JSONB,
                         contexts JSONB,
                         response TEXT NOT NULL,
+                        file JSONB,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                     );
                 """)

@@ -43,9 +43,9 @@ function ChatPageContent({
         try {
           const response = await api.get(`/conversations/${conversationId}`)
           const data = response.data
-          
           // Formater les messages historiques
           const interleaved = formatHistoricalMessages(data.messages)
+          console.log(interleaved)
           
           // Ajouter le message de bienvenue en premier (uniquement pour les conversations actives)
           const hasWelcomeMessage = interleaved.some(msg => msg.id === 'welcome-message')

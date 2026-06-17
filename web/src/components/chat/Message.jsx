@@ -1,6 +1,6 @@
 'use client'
 
-import { Search } from 'lucide-react'
+import { Search, FileText } from 'lucide-react'
 import TagBadge from './TagBadge'
 import MessageMeta from './MessageMeta'
 import { formatResponseText } from '@/utils/formatText'
@@ -19,6 +19,9 @@ import { formatResponseText } from '@/utils/formatText'
  * @param {string} [props.message.data.sub_label] - Sous-label du message
  * @param {string[]} [props.message.data.tags] - Tags du message
  * @param {string[]} [props.message.data.contexts] - Liste des contextes/fichiers utilisés
+ * @param {Object} [props.message.data.file] - Fichier associé au message
+ * @param {string} [props.message.data.file.name] - Nom du fichier
+ * @param {string} [props.message.data.file.url] - URL du fichier
  * @param {string} [props.userEmail] - Email de l'utilisateur à afficher au lieu de "Vous"
  * @returns {JSX.Element}
  */
@@ -48,20 +51,20 @@ export default function Message({ message, userEmail }) {
     >
       <div className="flex flex-col gap-3">
         {/* Métadonnées (label, sous-label) */}
-        <MessageMeta label={data?.label} subLabel={data?.sub_label} />
+        <MessageMeta label={data?.label || message.label} subLabel={data?.sub_label || message.sub_label} />
         
         {/* Réponse avec icône de contexte */}
         <div className="flex items-start gap-2">
           <div className="flex-1 text-neutral-800 font-light">
-            {formatResponseText(data?.answer || text)}
+            {formatResponseText(data?.answer || data?.response || message.response || text)}
           </div>
           
         {/* Icône loupe avec tooltip contextes */}
-        {data?.contexts && data.contexts.length > 0 && (
+        {(data?.contexts || message.contexts) && (data?.contexts?.length > 0 || message.contexts?.length > 0) && (
           <div className="relative group flex-shrink-0">
             <Search className="w-4 h-4 text-neutral-500 cursor-help" />
             <div className="absolute bottom-full right-0 mb-2 w-max p-2 bg-neutral-100 text-neutral-800 text-xs rounded-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-              {data.contexts.map((context, index) => (
+              {(data?.contexts || message.contexts || []).map((context, index) => (
                 <div key={index} className="mb-1 last:mb-0">
                   {context}
                 </div>
@@ -70,6 +73,29 @@ export default function Message({ message, userEmail }) {
           </div>
         )}
         </div>
+        
+        {/* Fichier PDF à télécharger/embeddé */}
+        {/* Support des deux structures : data.file ou file au niveau racine */}
+        {(data?.file?.url || message.file?.url) && (
+          <a
+            href={data?.file?.url || message.file?.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group mt-2 p-3 pr-5 bg-neutral-50 rounded-lg w-fit hover:bg-neutral-100 cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-neutral-500 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="text-sm text-violet-500 group-hover:text-violet-600 font-medium truncate block">
+                  {(data?.file?.name || message.file?.name) || 'Télécharger le PDF'}
+                </span>
+                <div className="text-xs text-neutral-500 mt-0.5">
+                  Document PDF généré
+                </div>
+              </div>
+            </div>
+          </a>
+        )}
         
         {/* Tags */}
         {data?.tags && data.tags.length > 0 && (
