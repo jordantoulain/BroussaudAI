@@ -9,7 +9,7 @@
 | ✅ | Haute | Authentification | Login, Register, Logout, Refresh Token |
 | ✅ | Haute | Chat RAG | Chat avec IA, classification automatique |
 | ✅ | Haute | Responsive Design | Sidebar mobile, messages pleine largeur |
-| ✅ | Moyenne | Gestion conversations | CRUD conversations, historique |
+| ✅ | Moyenne | Gestion conversations | CRUD conversations, historique, épinglage/désépinglage |
 | ✅ | Moyenne | Admin Panel | Interface administration avec protection par rôle |
 
 ### Tâches Techniques
@@ -47,7 +47,7 @@
 - Animation glissante du SideCanvas depuis la droite
 - Correction import get_password_hash dans admin.py
 - Serveur MCP (mcp/) avec FastMCP: hello_world, get_stat_by_name, get_stats_count, get_all_stats, get_stats_by_filter
-- Endpoints conversations utilisateur non-admin (GET /conversations, GET /conversations/{id}, GET /conversations/archives, GET /conversations/archives/{id}, DELETE /conversations/{id})
+- Endpoints conversations utilisateur non-admin (GET /conversations, GET /conversations/{id}, GET /conversations/archives, GET /conversations/archives/{id}, DELETE /conversations/{id}, PATCH /conversations/{id}/pin)
 - Layout chat commun avec sidebar persistante
 - Pages archives : liste (grille) et détail (lecture seule)
 - Navigation fixe "Broussaud AI" dans NavigationSelector

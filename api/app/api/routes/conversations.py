@@ -28,6 +28,7 @@ class ConversationResponse(BaseModel):
     id: str
     title: Optional[str] = None
     is_active: bool
+    pinned: bool = False
     created_at: str
 
 
@@ -39,7 +40,7 @@ def get_archived_conversations(current_user: dict = Depends(get_current_user)):
     """
     try:
         response = supabase.table("conversations") \
-            .select("id, title, user_id, created_at") \
+            .select("id, title, user_id, pinned, created_at") \
             .eq("user_id", current_user["id"]) \
             .eq("is_active", False) \
             .order("created_at", desc=True) \
@@ -64,7 +65,7 @@ def get_archived_conversation(conversation_id: str, current_user: dict = Depends
             conversation_id,
             current_user["id"],
             check_active=False,
-            select_fields="id, title, user_id, created_at"
+            select_fields="id, title, user_id, pinned, created_at"
         )
         
         # Récupérer les messages
@@ -97,9 +98,10 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
     """
     try:
         response = supabase.table("conversations") \
-            .select("id, title, is_active, created_at") \
+            .select("id, title, is_active, pinned, created_at") \
             .eq("user_id", current_user["id"]) \
             .eq("is_active", True) \
+            .order("pinned", desc=True) \
             .order("created_at", desc=True) \
             .execute()
         
@@ -142,7 +144,7 @@ def get_conversation(conversation_id: str, current_user: dict = Depends(get_curr
             conversation_id, 
             current_user["id"], 
             check_active=True,
-            select_fields="id, title, is_active, created_at"
+            select_fields="id, title, is_active, pinned, created_at"
         )
         
         # Récupérer les messages
@@ -189,4 +191,35 @@ def soft_delete_conversation(conversation_id: str, current_user: dict = Depends(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la suppression de la conversation: {str(e)}"
+        )
+
+
+@router.patch("/{conversation_id}/pin", status_code=status.HTTP_200_OK)
+def toggle_pin_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Toggle le statut pinned d'une conversation.
+    """
+    try:
+        # Vérifier que la conversation appartient à l'utilisateur
+        conversation = verify_conversation_owner(
+            conversation_id, 
+            current_user["id"],
+            check_active=True,
+            select_fields="id, pinned"
+        )
+        
+        # Toggle le pinned
+        new_pinned = not conversation.get("pinned", False)
+        supabase.table("conversations") \
+            .update({"pinned": new_pinned}) \
+            .eq("id", conversation_id) \
+            .execute()
+        
+        return {"pinned": new_pinned}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors du toggle pin de la conversation: {str(e)}"
         )

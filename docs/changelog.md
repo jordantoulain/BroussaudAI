@@ -1,6 +1,9 @@
 # Changelog
 
 ## 2026-06-17
+- [feat] - Ajout feature épingler/désépingler conversations : colonne pinned dans conversations, endpoint PATCH /conversations/{id}/pin, tri par pinned DESC
+- [feat] - Frontend : bouton toggle pin dans ConversationItem.jsx (icône Pin, ambre-500 si épinglé), affichage conversations épinglées en section "Épinglées" au-dessus de "Historique"
+- [feat] - UX : boutons d'action (pin/delete) masqués par défaut, visibles uniquement au hover sur ConversationItem (group-hover:opacity-100)
 - [refactor] - Séparation de api/app/services/agent.py en modules modulaire pour améliorer maintenabilité
 - [refactor] - Création config.py : RAGConfig pour la configuration
 - [refactor] - Création prompts.py : PromptManager pour la gestion des prompts

@@ -96,6 +96,16 @@ export default function ChatLayout({ children }) {
     }
   }, [activeConversationId, fetchConversations, router])
 
+  // Handler pour épingler/désépingler une conversation
+  const handleTogglePin = useCallback(async (convId, newPinnedState) => {
+    try {
+      await api.patch(`/conversations/${convId}/pin`)
+      await fetchConversations()
+    } catch (err) {
+      console.error('Erreur toggle pin conversation:', err)
+    }
+  }, [fetchConversations])
+
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarCollapsed(!isSidebarCollapsed)
   }, [isSidebarCollapsed])
@@ -118,6 +128,7 @@ export default function ChatLayout({ children }) {
         activeConversationId={activeConversationId}
         onSelectConversation={handleSelectConversation}
         onDeleteConversation={handleDeleteConversation}
+        onTogglePin={handleTogglePin}
         isMobile={isMobile}
         isCollapsed={isSidebarCollapsed}
         onToggle={handleToggleSidebar}

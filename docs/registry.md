@@ -19,7 +19,7 @@
 | `services/rag_service.py` | Service RAG | `RAGAgentService`, `get_rag_tool`, `get_pdf_tool`, contexte async |
 | `services/agent_orchestrator.py` | Orchestration agent | `chat_with_agent` avec intégration MCP |
 | `api/routes/admin.py` | Routes administration avec protection rôle ADMIN | Accès administratif |
-| `api/routes/conversations.py` | Routes conversations utilisateur (non-admin) | GET /conversations, GET /conversations/{id}, GET /conversations/archives, DELETE /conversations/{id} |
+| `api/routes/conversations.py` | Routes conversations utilisateur (non-admin) | GET /conversations, GET /conversations/{id}, GET /conversations/archives, GET /conversations/archives/{id}, DELETE /conversations/{id}, PATCH /conversations/{id}/pin |
 | `api/routes/ia.py` | Routes IA avec RAG | POST /ai/chat (chat avec agent), POST /ai/embedding (indexation PDF/TXT/JSON/CSV/XLSX/MD) |
 | `app/main.py` | Configuration principale avec Logger Phoenix | Point d'entrée FastAPI |
 
@@ -79,6 +79,7 @@
 | `api/routes/mfa.py` | `verify_mfa` | `user_id: str, code: str` | `dict` | Vérifie code TOTP et émet tokens (POST /mfa/verify) |
 | `api/routes/mfa.py` | `skip_mfa_setup` | `user_id: str` | `dict` | Passe l'étape MFA et émet tokens (POST /mfa/skip) |
 | `api/routes/mfa.py` | `get_mfa_status` | `user_id: str` | `dict` | Retourne has_mfa et is_verified (GET /mfa/status/{user_id}) |
+| `api/routes/conversations.py` | `toggle_pin_conversation` | `conversation_id: str, current_user: dict` | `dict` | Toggle le statut pinned d'une conversation (PATCH /conversations/{id}/pin) |
 
 ---
 
@@ -120,8 +121,8 @@
 | `components/chat/SidebarCollapsed.jsx` | `currentPage, userInfo, onToggle, isLoading` | Contenu collapsed (3 carrés) avec animation icône, skeleton avatar si isLoading |
 | `components/chat/NavigationSelector.jsx` | `currentPage, role` | Dropdown navigation (Broussaud AI, Boutique Maison Broussaud, Administration) - Administration visible uniquement pour ADMIN |
 | `components/chat/NewConversationButton.jsx` | `onClick` | Bouton nouvelle conversation |
-| `components/chat/ConversationList.jsx` | `conversations, activeConversationId, onSelectConversation, onDeleteConversation, isLoading` | Liste conversations avec 3 skeletons si isLoading |
-| `components/chat/ConversationItem.jsx` | `conversation, isActive` | Item conversation |
+| `components/chat/ConversationList.jsx` | `conversations, activeConversationId, onSelectConversation, onDeleteConversation, onTogglePin, isLoading` | Liste conversations avec 3 skeletons si isLoading, sépare en sections "Épinglées" et "Historique" |
+| `components/chat/ConversationItem.jsx` | `conversation, isActive, onClick, onDelete, onTogglePin` | Item conversation avec bouton pin (icône Pin, ambre-500 si épinglé) et bouton delete, boutons visibles au hover |
 | `components/chat/UserProfile.jsx` | `userInfo, isLoading` | Profil utilisateur avec dropdown, fond rouge-500 pour ADMIN, skeleton si isLoading |
 | `components/chat/ChatInput.jsx` | `input, onChange, onSubmit, isLoading` | Input chat avec texte de prévention |
 

@@ -1,6 +1,6 @@
 # Features - Local Chatbot Broussaud
 
-**Dernière mise à jour**: 16/06/2026
+**Dernière mise à jour**: 17/06/2026
 
 ---
 
@@ -50,6 +50,7 @@
 |---------|-------------|------|--------------------------------|
 | CRUD Conversations | Création, liste, chargement, suppression (soft-delete) | `api/app/api/routes/conversations.py`, `web/src/app/chat/` | `useConversations.js`, `ConversationItem.jsx` |
 | Soft Delete | Archivage via champ `is_active` | `api/app/api/routes/conversations.py` | - |
+| Épinglage conversations | Toggle pin via bouton, affichage section "Épinglées" au-dessus de "Historique" | `api/app/api/routes/conversations.py`, `web/src/components/chat/ConversationItem.jsx` | `Pin` icône, `pinned` champ DB, `PATCH /conversations/{id}/pin` |
 | Titre automatique | Premier prompt utilisateur comme titre | `api/app/api/routes/ia.py` | Extraction depuis `rag_result.title` |
 | Pages d'archives | Liste et détail des conversations archivées (lecture seule) | `web/src/app/chat/archives/` | `ConversationList.jsx`, `ChatHeader.jsx` (isArchived) |
 
@@ -104,7 +105,7 @@
 
 ### Base de données (Supabase)
 - Table users (avec rôle)
-- Table conversations (avec is_active, title)
+- Table conversations (avec is_active, title, **pinned**)
 - Table messages (avec contexts JSONB)
 - Table sessions
 - Vector Store: vecs.documents_gemini (3072 dimensions)

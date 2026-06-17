@@ -71,7 +71,7 @@ api/
 │   └── core/
 │       ├── llm.py          # Configuration LLM/Embeddings
 │       ├── supabase_client.py # Client Supabase
-│       └── supabase_init.py # Initialisation DB + tables
+│       └── supabase_init.py # Initialisation DB + tables (users, conversations avec pinned, messages, sessions)
 └── services/
     ├── __init__.py        # Exports centralisés de tous les modules
     ├── agent.py           # Point d'entrée principal (backward compatible)
@@ -197,7 +197,7 @@ web/
 | Table | Champs |
 |-------|--------|
 | **users** | id (UUID), nom, prenom, mail (UNIQUE), mdp (bcrypt), role (VARCHAR(50), DEFAULT 'USER') |
-| **conversations** | id (UUID), user_id (FK), title (TEXT), is_active (BOOLEAN), created_at |
+| **conversations** | id (UUID), user_id (FK), title (TEXT), is_active (BOOLEAN), **pinned (BOOLEAN, DEFAULT FALSE)**, created_at |
 | **messages** | id (SERIAL), conversation_id (FK), question, label, sub_label, tags (JSONB), contexts (JSONB), response, created_at |
 | **sessions** | id (UUID), user_id (FK), device_info, created_at, expires_at |
 
@@ -227,6 +227,7 @@ web/
 | GET | `/conversations/archives` | ✅ | Liste des conversations archivées |
 | GET | `/conversations/archives/{id}` | ✅ | Charger une archive avec messages |
 | DELETE | `/conversations/{id}` | ✅ | Soft-delete une conversation (is_active=false) |
+| PATCH | `/conversations/{id}/pin` | ✅ | Toggle le statut pinned d'une conversation |
 | **IA** |
 | POST | `/ai/chat` | ✅ | Chat avec RAG |
 | POST | `/ai/embedding` | ✅ | Upload document (PDF/TXT/JSON/CSV/XLSX/MD) - ADMIN only, vérifie doublons via metadata.filename |

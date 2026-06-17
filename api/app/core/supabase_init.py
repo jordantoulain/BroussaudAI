@@ -26,6 +26,7 @@ def init_db():
                         user_id UUID REFERENCES users(id) ON DELETE CASCADE,
                         title TEXT,
                         is_active BOOLEAN DEFAULT TRUE,
+                        pinned BOOLEAN DEFAULT FALSE,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
