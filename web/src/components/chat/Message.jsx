@@ -1,8 +1,10 @@
 'use client'
 
-import { Search, FileText } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Search, FileText, MessageCircle } from 'lucide-react'
 import TagBadge from './TagBadge'
 import MessageMeta from './MessageMeta'
+import ReviewModal from './ReviewModal'
 import { formatResponseText } from '@/utils/formatText'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -52,6 +54,20 @@ function prepareMarkdownText(text) {
  */
 export default function Message({ message, userEmail }) {
   const { id, isClient, text, data } = message
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
+
+  const handleOpenReviewModal = useCallback(() => {
+    setIsReviewModalOpen(true)
+  }, [])
+
+  const handleCloseReviewModal = useCallback(() => {
+    setIsReviewModalOpen(false)
+  }, [])
+
+  const handleReviewSubmit = useCallback(() => {
+    // Optionnel : rafraîchir ou afficher une notification
+    handleCloseReviewModal()
+  }, [handleCloseReviewModal])
   
   if (isClient) {
     // Message utilisateur
@@ -78,7 +94,7 @@ export default function Message({ message, userEmail }) {
         {/* Métadonnées (label, sous-label) */}
         <MessageMeta label={data?.label || message.label} subLabel={data?.sub_label || message.sub_label} />
         
-        {/* Réponse avec icône de contexte */}
+        {/* Réponse avec icônes de contexte et avis */}
         <div className="flex items-start gap-2">
           <div className="flex-1 text-neutral-800 font-light markdown-content">
             <ReactMarkdown 
@@ -89,19 +105,36 @@ export default function Message({ message, userEmail }) {
             </ReactMarkdown>
           </div>
           
-        {/* Icône loupe avec tooltip contextes */}
-        {(data?.contexts || message.contexts) && (data?.contexts?.length > 0 || message.contexts?.length > 0) && (
-          <div className="relative group flex-shrink-0">
-            <Search className="w-4 h-4 text-neutral-500 cursor-help" />
-            <div className="absolute bottom-full right-0 mb-2 w-max p-2 bg-neutral-100 text-neutral-800 text-xs rounded-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-              {(data?.contexts || message.contexts || []).map((context, index) => (
-                <div key={index} className="mb-1 last:mb-0">
-                  {context}
-                </div>
-              ))}
+        {/* Icônes de droite (contexte et avis) */}
+        <div className="relative flex flex-col gap-2 flex-shrink-0">
+          {/* Icône loupe avec tooltip contextes */}
+          {(data?.contexts || message.contexts) && (data?.contexts?.length > 0 || message.contexts?.length > 0) && (
+            <div className="relative group">
+              <Search className="w-4 h-4 text-neutral-500 cursor-help hover:text-orange-500 transition-colors" />
+              <div className="absolute bottom-full right-0 mb-2 w-max p-2 bg-neutral-800 text-white text-xs rounded-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                {(data?.contexts || message.contexts || []).map((context, index) => (
+                  <div key={index} className="mb-1 last:mb-0">
+                    {context}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+          
+          {/* Bouton avis - pas pour le message de bienvenue */}
+          {id !== 'welcome-message' && (
+            <button
+              onClick={handleOpenReviewModal}
+              className="relative group"
+              aria-label="Donner un avis"
+            >
+              <MessageCircle className="cursor-pointer w-4 h-4 text-neutral-500 hover:text-orange-500 transition-colors" />
+              <span className="absolute bottom-full right-0 mb-2 w-max p-2 bg-neutral-800 text-white text-xs rounded-lg z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                Donner un avis
+              </span>
+            </button>
+          )}
+        </div>
         </div>
         
         {/* Fichier PDF à télécharger/embeddé */}
@@ -134,6 +167,16 @@ export default function Message({ message, userEmail }) {
               <TagBadge key={idx} tag={tag} />
             ))}
           </div>
+        )}
+        
+        {/* Modale d'avis */}
+        {!isClient && (
+          <ReviewModal
+            isOpen={isReviewModalOpen}
+            onClose={handleCloseReviewModal}
+            messageId={id}
+            onSubmit={handleReviewSubmit}
+          />
         )}
       </div>
     </div>

@@ -28,6 +28,11 @@ export default function AdminNavigation() {
       match: (path) => path.startsWith('/admin/conversations')
     },
     { 
+      label: 'Avis', 
+      href: '/admin/reviews',
+      match: (path) => path.startsWith('/admin/reviews')
+    },
+    { 
       label: 'Documents', 
       href: '/admin/documents',
       match: (path) => path.startsWith('/admin/documents')

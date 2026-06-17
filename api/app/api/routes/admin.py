@@ -509,3 +509,71 @@ def delete_document(filename: str, current_user: dict = Depends(get_current_user
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la suppression du document: {str(e)}"
         )
+
+
+# ==================== Reviews (Avis) ====================
+
+@router.get("/reviews")
+def get_all_reviews(current_user: dict = Depends(get_current_user)):
+    """
+    Récupère tous les avis - accessible uniquement aux ADMIN
+    """
+    verify_admin(current_user)
+    
+    try:
+        # Récupérer tous les avis avec les informations utilisateur et message
+        response = supabase.table("reviews") \
+            .select("id, user_id, message_id, rating, description, created_at") \
+            .order("created_at", desc=True) \
+            .execute()
+        
+        reviews = response.data or []
+        
+        # Récupérer les messages correspondants pour obtenir le contenu et conversation_id
+        message_ids = [review["message_id"] for review in reviews]
+        messages_response = supabase.table("messages") \
+            .select("id, conversation_id, question, response") \
+            .in_("id", message_ids) \
+            .execute()
+        
+        messages_map = {msg["id"]: msg for msg in (messages_response.data or [])}
+        
+        # Récupérer les informations des utilisateurs pour chaque avis
+        user_ids = [review["user_id"] for review in reviews]
+        users_response = supabase.table("users") \
+            .select("id, nom, prenom, mail, role") \
+            .in_("id", user_ids) \
+            .execute()
+        
+        users_map = {user["id"]: user for user in (users_response.data or [])}
+        
+        # Ajouter les infos utilisateur et message à chaque avis
+        enriched_reviews = []
+        for review in reviews:
+            user_info = users_map.get(review["user_id"])
+            message_info = messages_map.get(review["message_id"])
+            
+            # Extraire le contenu du message (question pour user, response pour IA)
+            message_content = message_info["response"] if message_info and message_info.get("response") else (
+                message_info["question"] if message_info and message_info.get("question") else "Contenu non disponible"
+            )
+            
+            enriched_review = {
+                **review,
+                "user_nom": user_info["nom"] if user_info else None,
+                "user_prenom": user_info["prenom"] if user_info else None,
+                "user_mail": user_info["mail"] if user_info else None,
+                "user_role": user_info["role"] if user_info else None,
+                "conversation_id": message_info["conversation_id"] if message_info else None,
+                "message_content": message_content  # Message complet sans limite
+            }
+            enriched_reviews.append(enriched_review)
+        
+        return {"reviews": enriched_reviews, "count": len(enriched_reviews)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la récupération des avis: {str(e)}"
+        )

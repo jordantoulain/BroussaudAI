@@ -122,7 +122,14 @@ function ChatPageContent({
       
       const rawData = parseAPIResponse(response.data)
       
+      // Utiliser le message_id retourné par le backend si disponible, sinon générer un ID local
+      const backendMessageId = response.data.message_id
       const aiMessage = createAIMessage(rawData)
+      
+      // Si on a un ID de backend, l'utiliser
+      if (backendMessageId) {
+        aiMessage.id = backendMessageId
+      }
       
       setMessages((prev) => [...prev, aiMessage])
       

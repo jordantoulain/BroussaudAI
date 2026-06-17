@@ -44,13 +44,20 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
         .limit(5) \
         .execute()
     
+    long_history_response = supabase.table("messages") \
+        .select("question, response") \
+        .eq("conversation_id", conv_id) \
+        .order("created_at", desc=False) \
+        .execute()
+    
     past_interactions = history_response.data
+    long_past_interactions = long_history_response.data
 
     current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     enriched_question = f"Information système : La date et l'heure actuelles sont {current_date}.\n\nRequête de l'utilisateur : {question}"
 
     async with get_rag_service() as service:
-        rag_result = await chat_with_agent(service, enriched_question, past_interactions)
+        rag_result = await chat_with_agent(service, enriched_question, past_interactions, long_past_interactions)
 
     response_str = rag_result["response"]
 
@@ -98,7 +105,12 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
     print(log_data)
 
     try:
-        supabase.table("messages").insert(log_data).execute()
+        # Insérer le message et récupérer l'ID
+        message_response = supabase.table("messages").insert(log_data).execute()
+        # Récupérer l'ID du message fraîchement inséré
+        if message_response.data:
+            message_id = message_response.data[0].get("id")
+            rag_result["message_id"] = message_id
     except Exception as e:
         print(f"Erreur log RAG : {e}")
 
