@@ -22,7 +22,7 @@ export default function MessageList({ messages, isLoading, messagesEndRef, isAdm
       {/* Liste des messages */}
       <div className="w-full flex flex-col gap-2 pt-10">
         {messages.map((msg) => (
-          <Message key={msg.id} message={msg} userEmail={userEmail} />
+          <Message key={msg.id} message={msg} userEmail={userEmail} isAdminView={isAdminView} />
         ))}
       </div>
       

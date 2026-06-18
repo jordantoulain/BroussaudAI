@@ -52,7 +52,7 @@ function prepareMarkdownText(text) {
  * @param {string} [props.userEmail] - Email de l'utilisateur à afficher au lieu de "Vous"
  * @returns {JSX.Element}
  */
-export default function Message({ message, userEmail }) {
+export default function Message({ message, userEmail, isAdminView = false }) {
   const { id, isClient, text, data } = message
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
 
@@ -121,8 +121,8 @@ export default function Message({ message, userEmail }) {
             </div>
           )}
           
-          {/* Bouton avis - pas pour le message de bienvenue */}
-          {id !== 'welcome-message' && (
+          {/* Bouton avis - pas pour le message de bienvenue et pas en mode admin */}
+          {!isAdminView && id !== 'welcome-message' && (
             <button
               onClick={handleOpenReviewModal}
               className="relative group"
