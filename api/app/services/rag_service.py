@@ -111,6 +111,67 @@ class RAGAgentService:
                 "un téléchargement, ou un PDF de la conversation."
             ),
         )
+    
+    def get_summary_tool(self, chat_history: list[dict[str, str]]) -> FunctionTool:
+        """
+        Create conversation summary tool for the agent.
+        
+        Args:
+            chat_history: Current chat history
+            
+        Returns:
+            FunctionTool for generating conversation summaries
+        """
+        async def _generate_summary(action: str) -> str:
+            """
+            Generate a comprehensive summary of the entire conversation.
+            
+            Args:
+                action: L'action à exécuter, doit toujours être 'generate_summary'
+            """
+            if not chat_history:
+                return "Aucune conversation à résumer."
+            
+            # Formatter l'historique pour le prompt
+            conversation_text = ""
+            for i, interaction in enumerate(chat_history, 1):
+                question = interaction.get("question", "")
+                response = interaction.get("response", "")
+                
+                if question:
+                    conversation_text += f"\n=== Échange {i} ===\n"
+                    conversation_text += f"Q: {question}\n"
+                    conversation_text += f"R: {response}\n"
+            
+            summary_prompt = (
+                "Tu es un assistant qui doit résumer une conversation complète de manière claire et structurée. "
+                "Analyse la conversation suivante et génère un résumé complet qui inclut :\n"
+                "1. Le sujet principal de la conversation\n"
+                "2. Les points clés abordés\n"
+                "3. Les décisions ou conclusions importantes\n"
+                "4. Les actions à entreprendre (si applicable)\n"
+                "5. Un résumé général en 3-5 phrases\n\n"
+                f"Conversation:\n{conversation_text}\n\n"
+                "Réponds UNIQUEMENT avec le résumé au format markdown, sans introduction ni conclusion."
+            )
+            
+            # Utiliser le LLM pour générer le résumé
+            llm = Settings.llm
+            response = await llm.acomplete(summary_prompt)
+            
+            return str(response)
+        
+        return FunctionTool.from_defaults(
+            fn=_generate_summary,
+            name="generate_conversation_summary",
+            description=(
+                "Génère un résumé complet et structuré de toute la conversation actuelle. "
+                "Le résumé inclut : le sujet principal, les points clés, les décisions, "
+                "les actions à entreprendre, et un résumé général. "
+                "UTILISE CET OUTIL OBLIGATOIREMENT lorsque l'utilisateur demande un résumé, "
+                "un récapitulatif, ou de résumer la conversation."
+            ),
+        )
 
 
 @asynccontextmanager

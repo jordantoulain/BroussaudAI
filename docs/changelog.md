@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-06-18
+- [feat] - Ajout outil generate_conversation_summary dans rag_service.py pour résumer une conversation complète
+
 ## 2026-06-17
 - [feat] - Ajout feature épingler/désépingler conversations : colonne pinned dans conversations, endpoint PATCH /conversations/{id}/pin, tri par pinned DESC
 - [feat] - Frontend : bouton toggle pin dans ConversationItem.jsx (icône Pin, ambre-500 si épinglé), affichage conversations épinglées en section "Épinglées" au-dessus de "Historique"

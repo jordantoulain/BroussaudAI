@@ -36,11 +36,12 @@ async def chat_with_agent(
     """
     local_tools = [service.get_rag_tool()]
     
-    # Add PDF tool if history is available
+    # Add PDF and Summary tools if history is available
     history = chat_history or []
     
     if long_history:
         local_tools.append(service.get_pdf_tool(long_history))
+        local_tools.append(service.get_summary_tool(long_history))
     
     # Load MCP tools if available
     try:

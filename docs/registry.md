@@ -64,8 +64,9 @@
 | `api/routes/admin.py` | `get_timeline_data` | - | `dict` | Génère timeline 10 jours pour conversations et messages |
 | `services/config.py` | `RAGConfig` | Dataclass de configuration (collection_name, dimension, similarity_top_k, mcp_server_url, prompts_dir) |
 | `services/prompts.py` | `PromptManager` | Gestionnaire de prompts (load_prompt, get_prompt_template) |
-| `services/rag_service.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool, get_pdf_tool |
+| `services/rag_service.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool, get_pdf_tool, get_summary_tool |
 | `services/rag_service.py` | `get_rag_service` | Contexte async pour RAGAgentService |
+| `services/rag_service.py` | `get_summary_tool` | `chat_history: list` | `FunctionTool` | Génère un résumé structuré de la conversation (sujet, points clés, décisions, actions, résumé général) |
 | `services/agent_orchestrator.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP + PDF), historique, retourne `response`, `context` |
 | `services/pdf_generator.py` | `PDFGenerator` | Classe utilitaire avec generate_conversation_pdf, upload_to_supabase_storage |
 | `services/pdf_generator.py` | `generate_conversation_pdf_link` | `chat_history: list` | `str` (JSON) | Génère PDF et retourne JSON avec `url` et `filename` |
