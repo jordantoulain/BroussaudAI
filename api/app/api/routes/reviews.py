@@ -4,8 +4,50 @@ from api.routes.auth import get_current_user
 from core.supabase_client import supabase
 from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter(prefix="/reviews", tags=["Reviews"])
+
+
+def update_review_stats_ia(is_positive: bool):
+    """
+    Met à jour les statistiques des avis dans stats_ia
+    """
+    today = datetime.now().date()
+    
+    # Récupérer les stats d'aujourd'hui
+    existing_stats = supabase.table("stats_ia") \
+        .select("*") \
+        .eq("date", today.isoformat()) \
+        .maybe_single() \
+        .execute()
+    
+    # Sécuriser l'accès à .data
+    if existing_stats is None:
+        existing_stats = type('obj', (object,), {'data': None})()
+    
+    existing_data = existing_stats.data or {}
+    
+    if existing_data:
+        # Mettre à jour les stats existantes
+        if is_positive:
+            supabase.table("stats_ia") \
+                .update({"positive_reviews": existing_data.get("positive_reviews", 0) + 1}) \
+                .eq("date", today.isoformat()) \
+                .execute()
+        else:
+            supabase.table("stats_ia") \
+                .update({"negative_reviews": existing_data.get("negative_reviews", 0) + 1}) \
+                .eq("date", today.isoformat()) \
+                .execute()
+    else:
+        # Créer de nouvelles stats pour aujourd'hui
+        stats_data = {
+            "date": today.isoformat(),
+            "positive_reviews": 1 if is_positive else 0,
+            "negative_reviews": 1 if not is_positive else 0
+        }
+        supabase.table("stats_ia").insert(stats_data).execute()
 
 
 class ReviewRequest(BaseModel):
@@ -67,6 +109,9 @@ def create_review(review_data: ReviewRequest, current_user: dict = Depends(get_c
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Échec de la création de l'avis"
             )
+        
+        # Mettre à jour les stats IA pour les avis
+        update_review_stats_ia(review_data.rating)
         
         return review_response.data[0]
     except HTTPException:

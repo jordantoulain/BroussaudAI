@@ -87,11 +87,132 @@ def get_stats():
         # Nombre de vecteurs (documents dans vecs.documents_gemini)
         vectors_count = supabase.schema("vecs").table("documents_gemini").select("id").execute()
         
+        # Statistiques IA depuis stats_ia
+        from datetime import datetime, timezone, timedelta
+        today = datetime.now(timezone.utc).date()
+        
+        # Fonction pour exécuter une requête et retourner des données sûres
+        def safe_execute(query_builder):
+            result = query_builder.execute()
+            if result is None:
+                return type('obj', (object,), {'data': []})()
+            if not hasattr(result, 'data'):
+                return type('obj', (object,), {'data': []})()
+            return result
+        
+        # Stats pour aujourd'hui
+        today_stats = safe_execute(supabase.table("stats_ia") \
+            .select("*") \
+            .eq("date", today.isoformat()) \
+            .maybe_single())
+        
+        # Stats pour la semaine (7 derniers jours)
+        week_ago = today - timedelta(days=6)
+        week_stats = safe_execute(supabase.table("stats_ia") \
+            .select("*") \
+            .gte("date", week_ago.isoformat()) \
+            .order("date"))
+        
+        # Stats pour tout le temps
+        all_stats = safe_execute(supabase.table("stats_ia").select("*"))
+        
+        # Calculer les moyennes et totaux
+        def calculate_avg(stats_data, field):
+            if not stats_data or not getattr(stats_data, 'data', None):
+                return 0
+            values = [s[field] for s in stats_data.data if s and s.get(field) is not None]
+            return sum(values) / len(values) if values else 0
+        
+        def calculate_sum(stats_data, field):
+            if not stats_data or not getattr(stats_data, 'data', None):
+                return 0
+            return sum(s.get(field, 0) for s in stats_data.data if s)
+        
+        # Temps moyen de réponse (en ms)
+        today_data = getattr(today_stats, 'data', {}) or {}
+        avg_response_time_today = today_data.get("avg_response_time_ms", 0)
+        avg_response_time_week = calculate_avg(week_stats, "avg_response_time_ms")
+        avg_response_time_all = calculate_avg(all_stats, "avg_response_time_ms")
+        
+        # Tokens
+        total_tokens_today = today_data.get("total_tokens", 0)
+        total_tokens_week = calculate_sum(week_stats, "total_tokens")
+        total_tokens_all = calculate_sum(all_stats, "total_tokens")
+        
+        # Conversations depuis stats_ia
+        total_conversations_today = today_data.get("total_conversations", 0)
+        total_conversations_week = calculate_sum(week_stats, "total_conversations")
+        total_conversations_all = calculate_sum(all_stats, "total_conversations")
+        
+        # Messages depuis stats_ia
+        total_messages_today = today_data.get("total_messages", 0)
+        total_messages_week = calculate_sum(week_stats, "total_messages")
+        total_messages_all = calculate_sum(all_stats, "total_messages")
+        
+        # Avis
+        positive_today = today_data.get("positive_reviews", 0)
+        negative_today = today_data.get("negative_reviews", 0)
+        positive_week = calculate_sum(week_stats, "positive_reviews")
+        negative_week = calculate_sum(week_stats, "negative_reviews")
+        positive_all = calculate_sum(all_stats, "positive_reviews")
+        negative_all = calculate_sum(all_stats, "negative_reviews")
+        
+        # Timeline stats_ia pour la semaine (pour les charts)
+        # Extraire les données par jour pour la semaine
+        ia_timeline_data = []
+        if week_stats and week_stats.data:
+            for stat in week_stats.data:
+                ia_timeline_data.append({
+                    "date": stat.get("date", ""),
+                    "total_conversations": stat.get("total_conversations", 0),
+                    "total_messages": stat.get("total_messages", 0),
+                    "total_tokens": stat.get("total_tokens", 0),
+                    "avg_response_time_ms": stat.get("avg_response_time_ms", 0),
+                    "positive_reviews": stat.get("positive_reviews", 0),
+                    "negative_reviews": stat.get("negative_reviews", 0)
+                })
+        
+        # Si stats_ia est vide, calculer depuis les données existantes
+        all_stats_data = getattr(all_stats, 'data', []) or []
+        if not all_stats_data or len(all_stats_data) == 0:
+            # Compter les avis positifs/négatifs depuis la table reviews
+            reviews_resp = safe_execute(supabase.table("reviews").select("rating"))
+            reviews_data = getattr(reviews_resp, 'data', []) or []
+            positive_all = sum(1 for r in reviews_data if r and r.get("rating") == True)
+            negative_all = sum(1 for r in reviews_data if r and r.get("rating") == False)
+        
         return {
             "users_count": len(users_count.data) if users_count.data else 0,
-            "conversations_count": len(conversations_count.data) if conversations_count.data else 0,
-            "messages_count": len(messages_count.data) if messages_count.data else 0,
-            "vectors_count": len(vectors_count.data) if vectors_count.data else 0
+            "conversations_count": total_conversations_all or len(conversations_count.data) if conversations_count.data else 0,
+            "messages_count": total_messages_all or len(messages_count.data) if messages_count.data else 0,
+            "vectors_count": len(vectors_count.data) if vectors_count.data else 0,
+            "stats_ia": {
+                "today": {
+                    "total_conversations": total_conversations_today,
+                    "total_messages": total_messages_today,
+                    "total_tokens": total_tokens_today,
+                    "avg_response_time_ms": avg_response_time_today,
+                    "positive_reviews": positive_today,
+                    "negative_reviews": negative_today
+                },
+                "week": {
+                    "total_conversations": total_conversations_week,
+                    "total_messages": total_messages_week,
+                    "total_tokens": total_tokens_week,
+                    "avg_response_time_ms": round(avg_response_time_week),
+                    "positive_reviews": positive_week,
+                    "negative_reviews": negative_week
+                },
+                "all_time": {
+                    "total_conversations": total_conversations_all,
+                    "total_messages": total_messages_all,
+                    "total_tokens": total_tokens_all,
+                    "avg_response_time_ms": round(avg_response_time_all),
+                    "positive_reviews": positive_all,
+                    "negative_reviews": negative_all
+                }
+            },
+            "ia_timeline": ia_timeline_data
         }
     except Exception as e:
         raise HTTPException(
@@ -108,12 +229,13 @@ def admin_dashboard(current_user: dict = Depends(get_current_user)):
     """
     verify_admin(current_user)
     
-    stats = get_stats()
+    stats_data = get_stats()
     timeline = get_timeline_data()
     
     return {
-        "stats": stats,
-        "timeline": timeline
+        "stats": stats_data,
+        "timeline": timeline,
+        "ia_timeline": stats_data.get("ia_timeline", [])
     }
 
 

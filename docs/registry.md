@@ -9,7 +9,7 @@
 | Chemin | Description | Utilisation |
 |--------|-------------|-------------|
 | `core/supabase_client.py` | Client Supabase configuré | `from core.supabase_client import supabase` |
-| `core/supabase_init.py` | Initialisation tables DB | Appelé au startup |
+| `core/supabase_init.py` | Initialisation tables DB (users, conversations, messages, sessions, reviews, stats_ia) | Appelé au startup |
 | `core/llm.py` | Configuration LLM/Embeddings | Importé au démarrage |
 | `services/agent.py` | Point d'entrée principal pour les services agent (backward compatible) | `from services.agent import RAGConfig, RAGAgentService, chat_with_agent, get_rag_service` |
 | `services/config.py` | Configuration RAG | `RAGConfig` dataclass avec paramètres depuis env |
@@ -56,7 +56,11 @@
 | `api/routes/auth.py` | `create_refresh_token` | `data: dict` | `str` | Crée token (7 jours, inclut role) |
 | `api/routes/auth.py` | `get_password_hash` | `password: str` | `str` | Hash bcrypt |
 | `api/routes/auth.py` | `verify_password` | `plain, hashed: str` | `bool` | Vérifie mot de passe |
-| `api/routes/admin.py` | `admin_dashboard` | `current_user: dict` | `dict` | Dashboard admin + timeline (ADMIN seulement) |
+| `api/routes/admin.py` | `admin_dashboard` | `current_user: dict` | `dict` | Dashboard admin + timeline + stats_ia (tokens, temps réponse, avis) (ADMIN seulement) |
+| `api/routes/admin.py` | `get_stats` | - | `dict` | Récupère stats globale + stats_ia (today/week/all_time) |
+| `api/routes/admin.py` | `get_timeline_data` | - | `dict` | Timeline conversations et messages sur 10 jours |
+| `api/routes/ia.py` | `update_stats_ia` | `conversation_id, new_message, tokens_used, response_time_ms` | - | Met à jour stats_ia avec conversations, messages, tokens, temps de réponse |
+| `api/routes/reviews.py` | `update_review_stats_ia` | `is_positive: bool` | - | Met à jour stats_ia avec avis positifs/négatifs |
 | `api/routes/admin.py` | `list_users` | `current_user: dict` | `dict` | Liste utilisateurs (ADMIN seulement) |
 | `api/routes/admin.py` | `create_user` | `user_data: dict, current_user: dict` | `dict` | Crée utilisateur (POST /admin/users) (ADMIN seulement) |
 | `api/routes/admin.py` | `update_user` | `user_id: str, user_data: dict, current_user: dict` | `dict` | Met à jour utilisateur (PUT /admin/users/{id}) (ADMIN seulement) |
@@ -67,7 +71,7 @@
 | `services/rag_service.py` | `RAGAgentService` | Service principal avec vector_store, index, query_engine, get_rag_tool, get_pdf_tool, get_summary_tool |
 | `services/rag_service.py` | `get_rag_service` | Contexte async pour RAGAgentService |
 | `services/rag_service.py` | `get_summary_tool` | `chat_history: list` | `FunctionTool` | Génère un résumé structuré de la conversation (sujet, points clés, décisions, actions, résumé général) |
-| `services/agent_orchestrator.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP + PDF), historique, retourne `response`, `context` |
+| `services/agent_orchestrator.py` | `chat_with_agent` | `service: RAGAgentService, query: str, chat_history: list` | `dict` | Chat avec agent multi-outils (RAG + MCP + PDF + Summary), historique, retourne `response`, `context` |
 | `services/pdf_generator.py` | `PDFGenerator` | Classe utilitaire avec generate_conversation_pdf, upload_to_supabase_storage |
 | `services/pdf_generator.py` | `generate_conversation_pdf_link` | `chat_history: list` | `str` (JSON) | Génère PDF et retourne JSON avec `url` et `filename` |
 | `services/utils.py` | `extract_json_from_response` | `text: str` | `str` | Extrait JSON brut d'une réponse textuelle |

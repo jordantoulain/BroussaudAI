@@ -66,6 +66,21 @@ def init_db():
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
+                
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS stats_ia (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        date DATE NOT NULL,
+                        total_conversations INTEGER DEFAULT 0,
+                        total_messages INTEGER DEFAULT 0,
+                        total_tokens INTEGER DEFAULT 0,
+                        avg_response_time_ms INTEGER DEFAULT 0,
+                        positive_reviews INTEGER DEFAULT 0,
+                        negative_reviews INTEGER DEFAULT 0,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(date)
+                    );
+                """)
             conn.commit()
     except Exception as e:
         return

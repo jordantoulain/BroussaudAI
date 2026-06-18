@@ -14,7 +14,7 @@ const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
  * @param {string} [props.color] - Couleur de la ligne (default: violet-500)
  * @returns {JSX.Element}
  */
-export default function MiniChart({ series, categories, color = '#000000' }) {
+export default function MiniChart({ series, categories, color = '#000000', height = 16 }) {
   const options = {
     chart: {
       type: 'line',
@@ -69,8 +69,10 @@ export default function MiniChart({ series, categories, color = '#000000' }) {
     }
   }
 
+  const heightClass = height === 16 ? 'h-16' : height === 20 ? 'h-20' : `h-[${height}px]`
+
   return (
-    <div className="w-full h-16">
+    <div className={`w-full ${heightClass}`}>
       <Chart
         options={options}
         series={[{ data: series }]}

@@ -2,6 +2,12 @@
 
 ## 2026-06-18
 - [feat] - Ajout outil generate_conversation_summary dans rag_service.py pour résumer une conversation complète
+- [feat] - Ajout table stats_ia dans supabase_init.py pour le suivi des statistiques IA par jour
+- [feat] - Backend: admin.py étendu avec stats_ia (conversations, messages, temps moyen de réponse, tokens, avis positifs/négatifs) par jour/semaine/total + timeline
+- [feat] - Backend: ia.py - update_stats_ia() pour tracer conversations, messages, tokens, temps de réponse à chaque requête
+- [feat] - Backend: reviews.py - update_review_stats_ia() pour tracer les avis positifs/négatifs
+- [feat] - Frontend: dashboard admin avec charts IA sur 7 jours (conversations, messages, tokens, avis, temps de réponse)
+- [feat] - Frontend: MiniChart.jsx support height prop pour graphs de différentes tailles
 
 ## 2026-06-17
 - [feat] - Ajout feature épingler/désépingler conversations : colonne pinned dans conversations, endpoint PATCH /conversations/{id}/pin, tri par pinned DESC

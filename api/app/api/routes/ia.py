@@ -2,6 +2,7 @@ import tempfile
 import os
 import uuid
 import json
+import time
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, status
 from llama_index.core import Document, Settings
 from llama_index.readers.file import PandasCSVReader, PandasExcelReader, PDFReader, MarkdownReader
@@ -14,6 +15,61 @@ from services.agent import get_rag_service, chat_with_agent
 from datetime import datetime
 
 router = APIRouter(prefix="/ai", tags=["Intelligence Artificielle"])
+
+
+def update_stats_ia(conversation_id=None, new_message=False, tokens_used=0, response_time_ms=0):
+    """
+    Met à jour les statistiques IA dans la table stats_ia
+    """
+    today = datetime.now().date()
+    
+    # Récupérer les stats d'aujourd'hui
+    existing_stats = supabase.table("stats_ia") \
+        .select("*") \
+        .eq("date", today.isoformat()) \
+        .maybe_single() \
+        .execute()
+    
+    # Sécuriser l'accès à .data
+    if existing_stats is None:
+        existing_stats = type('obj', (object,), {'data': None})()
+    
+    existing_data = existing_stats.data or {}
+    
+    if existing_data:
+        # Mettre à jour les stats existantes
+        updates = {}
+        if new_message:
+            updates["total_messages"] = existing_data.get("total_messages", 0) + 1
+        if conversation_id:
+            updates["total_conversations"] = existing_data.get("total_conversations", 0) + 1
+        if tokens_used > 0:
+            updates["total_tokens"] = existing_data.get("total_tokens", 0) + tokens_used
+        if response_time_ms > 0:
+            # Calculer la moyenne : (ancienne_moyenne * ancien_count + nouvelle_valeur) / nouveau_count
+            old_avg = existing_data.get("avg_response_time_ms", 0)
+            old_count = existing_data.get("total_messages", 0)
+            new_count = old_count + (1 if new_message else 0)
+            if new_count > 0:
+                updates["avg_response_time_ms"] = int(((old_avg * old_count) + response_time_ms) / new_count)
+            else:
+                updates["avg_response_time_ms"] = response_time_ms
+        
+        if updates:
+            supabase.table("stats_ia") \
+                .update(updates) \
+                .eq("date", today.isoformat()) \
+                .execute()
+    else:
+        # Créer de nouvelles stats pour aujourd'hui
+        stats_data = {
+            "date": today.isoformat(),
+            "total_conversations": 1 if conversation_id else 0,
+            "total_messages": 1 if new_message else 0,
+            "total_tokens": tokens_used,
+            "avg_response_time_ms": response_time_ms if response_time_ms > 0 else 0
+        }
+        supabase.table("stats_ia").insert(stats_data).execute()
 
 class UserPrompt(BaseModel):
     text: str
@@ -56,10 +112,22 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
     current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     enriched_question = f"Information système : La date et l'heure actuelles sont {current_date}.\n\nRequête de l'utilisateur : {question}"
 
+    # Mesurer le temps de réponse
+    start_time = time.time()
+    
     async with get_rag_service() as service:
         rag_result = await chat_with_agent(service, enriched_question, past_interactions, long_past_interactions)
+    
+    end_time = time.time()
+    response_time_ms = int((end_time - start_time) * 1000)
 
     response_str = rag_result["response"]
+    
+    # Estimer le nombre de tokens (approximation simple basée sur la longueur)
+    # En moyenne, 1 token ≈ 4 caractères pour le français
+    question_tokens = max(1, len(question) // 4)
+    response_tokens = max(1, len(response_str) // 4)
+    total_tokens = question_tokens + response_tokens
 
     label = "RAG"
     sub_label = "GENERAL"
@@ -109,6 +177,16 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
             rag_result["message_id"] = message_id
     except Exception as e:
         print(f"Erreur log RAG : {e}")
+
+    # Mettre à jour les statistiques IA
+    # Si c'est une nouvelle conversation, compter comme nouvelle conversation
+    is_new_conversation = len(long_past_interactions) == 0
+    update_stats_ia(
+        conversation_id=conv_id if is_new_conversation else None,
+        new_message=True,
+        tokens_used=total_tokens,
+        response_time_ms=response_time_ms
+    )
 
     rag_result["conversation_id"] = conv_id
     rag_result["contexts"] = contexts
