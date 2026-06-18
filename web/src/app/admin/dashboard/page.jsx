@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
         
         {/* Tokens utilisés */}
         <div className="bg-neutral-100 rounded-lg p-6">
-          <div className="text-neutral-600 text-sm font-medium mb-2">Tokens utilisés</div>
+          <div className="text-neutral-600 text-sm font-medium mb-2">Tokens utilisés <span className='text-sm font-light'>(approximation)</span></div>
           <div className="text-lg text-neutral-500 mb-2">Aujourd'hui</div>
           <div className="text-2xl font-bold text-neutral-800">{formatTokens(todayStats.total_tokens || 0)}</div>
           <div className="text-sm text-neutral-500 mt-2">
