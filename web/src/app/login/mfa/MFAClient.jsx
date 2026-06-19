@@ -123,7 +123,7 @@ export default function MFAClient() {
     return (
       <AuthCard>
         <Logo />
-        <div className='w-full flex items-center justify-center'>
+        <div className='w-full flex items-center justify-center text-orange-500'>
           <LoadingIndicator2/>
         </div>
       </AuthCard>

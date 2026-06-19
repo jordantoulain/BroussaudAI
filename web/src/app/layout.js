@@ -10,7 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <body className='bg-[#ededed]'>
-        {/* <AnimatedBackground bgColor="#ededed" squareSize={35} /> */}
+        <AnimatedBackground bgColor="#efefef" squareSize={35} />
         
         <main className="relative z-0">
           {children}
