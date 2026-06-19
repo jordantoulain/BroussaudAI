@@ -1,15 +1,76 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from api.routes.auth import get_current_user
 from core.supabase_client import supabase
+from core.database import get_mariadb_connection_direct
 import os
 import pymysql
 import psycopg2
 from datetime import datetime, timedelta
+from contextlib import contextmanager
+import logging
 
 router = APIRouter(prefix="/data", tags=["Data"])
 
+logger = logging.getLogger(__name__)
+
 # Postes de production dans l'ordre du flux
 POSTES_ORDER = ['TRICO', 'RETOUR', 'REMAIL', 'FORM', 'QUALI', 'BROD', 'ETIQUE', 'FLUX_PROD']
+
+# PostgreSQL connection pool for Supabase
+postgres_pool = None
+
+def init_postgres_pool():
+    """Initialize PostgreSQL connection pool for Supabase."""
+    global postgres_pool
+    if postgres_pool is None:
+        try:
+            from psycopg2 import pool as pg_pool
+            conn_str = os.environ.get("SUPABASE_CONNECTION_STRING")
+            if not conn_str:
+                raise ValueError("SUPABASE_CONNECTION_STRING non configuré")
+            postgres_pool = pg_pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=5,
+                dsn=conn_str,
+                connect_timeout=5,
+                keepalives=1,
+                keepalives_idle=30,
+                keepalives_interval=10,
+                keepalives_count=5
+            )
+            logger.info("PostgreSQL connection pool created")
+        except ImportError:
+            logger.warning("psycopg2.pool not available, using direct connections")
+            postgres_pool = None
+
+
+@contextmanager
+def get_supabase_connection():
+    """Get a PostgreSQL connection from the pool or create a new one."""
+    global postgres_pool
+    
+    if postgres_pool is None:
+        init_postgres_pool()
+    
+    if postgres_pool is not None:
+        conn = postgres_pool.getconn()
+        try:
+            yield conn
+        finally:
+            postgres_pool.putconn(conn)
+    else:
+        # Fallback to direct connection
+        conn_str = os.environ.get("SUPABASE_CONNECTION_STRING")
+        if not conn_str:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="SUPABASE_CONNECTION_STRING non configuré"
+            )
+        conn = psycopg2.connect(conn_str)
+        try:
+            yield conn
+        finally:
+            conn.close()
 
 
 def verify_admin(current_user: dict):
@@ -21,29 +82,8 @@ def verify_admin(current_user: dict):
         )
 
 
-def get_mariadb_connection():
-    """Établit une connexion à la base MariaDB."""
-    conn = pymysql.connect(
-        host=os.environ.get("MARIADB_HOST", "localhost"),
-        port=int(os.environ.get("MARIADB_PORT", 3306)),
-        user=os.environ.get("MARIADB_USER", "root"),
-        password=os.environ.get("MARIADB_PASSWORD", ""),
-        database=os.environ.get("MARIADB_DATABASE", ""),
-        charset="utf8mb3",
-        cursorclass=pymysql.cursors.DictCursor
-    )
-    return conn
-
-
-def get_supabase_connection():
-    """Établit une connexion PostgreSQL à Supabase."""
-    conn_str = os.environ.get("SUPABASE_CONNECTION_STRING")
-    if not conn_str:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="SUPABASE_CONNECTION_STRING non configuré"
-        )
-    return psycopg2.connect(conn_str)
+# Use the pool from core.database for MariaDB
+get_mariadb_connection = get_mariadb_connection_direct
 
 
 def create_stats_tables(conn):

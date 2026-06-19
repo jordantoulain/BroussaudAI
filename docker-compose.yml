@@ -17,6 +17,7 @@ services:
       - MARIADB_USER=${MARIADB_USER}
       - MARIADB_DATABASE=${MARIADB_DATABASE}
       - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY}
   broussaud_ai_mcp:
     build: ./mcp/
     ports:

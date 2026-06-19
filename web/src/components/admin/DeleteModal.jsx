@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { X, Trash2 } from 'lucide-react'
+import { X, Trash2, RefreshCw } from 'lucide-react'
 
 /**
  * Composant Modal de confirmation de suppression
@@ -21,7 +21,12 @@ export default function DeleteModal({
   onConfirm, 
   title = "Confirmer la suppression",
   message = "Êtes-vous sûr de vouloir supprimer cet élément ?",
-  itemName
+  itemName,
+  confirmText = "Supprimer",
+  confirmClassName = "bg-red-500 hover:bg-red-400",
+  icon: Icon = Trash2,
+  iconClassName = "text-red-500",
+  containerClassName = "bg-red-100"
 }) {
   // Gérer le scroll du body
   useEffect(() => {
@@ -76,8 +81,8 @@ export default function DeleteModal({
           
           {/* Contenu */}
           <div className="text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Trash2 className="w-8 h-8 text-red-500" />
+            <div className={`w-16 h-16 ${containerClassName} rounded-full flex items-center justify-center mx-auto mb-6`}>
+              <Icon className={`w-8 h-8 ${iconClassName}`} />
             </div>
             
             <h2 id="delete-modal-title" className="text-xl font-bold text-neutral-800 mb-2">
@@ -102,10 +107,10 @@ export default function DeleteModal({
                   onConfirm()
                   onClose()
                 }}
-                className="px-6 cursor-pointer py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-400 transition-colors font-medium flex items-center gap-2"
+                className={`px-6 cursor-pointer py-2.5 ${confirmClassName} text-white rounded-xl transition-colors font-medium flex items-center gap-2`}
               >
-                <Trash2 className="w-4 h-4" />
-                Supprimer
+                <Icon className="w-4 h-4" />
+                {confirmText}
               </button>
             </div>
           </div>

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, status
+from pydantic import UUID4
 from api.routes.auth import get_current_user, get_password_hash
 from core.supabase_client import supabase
+from core.sanitize import sanitize_text, sanitize_dict
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
 
@@ -272,11 +274,17 @@ def list_users(current_user: dict = Depends(get_current_user)):
     verify_admin(current_user)
     
     try:
+        # Inclure mfa_secret et is_active pour savoir si 2FA est configure et si compte est actif
         response = supabase.table("users") \
-            .select("id, nom, prenom, mail, role, mfa_secret") \
+            .select("id, nom, prenom, mail, role, created_at, last_login_at, mfa_secret, is_active, deleted_at") \
             .execute()
         
         users = response.data or []
+        
+        # Masquer la valeur de mfa_secret si elle existe
+        for user in users:
+            if user.get("mfa_secret") is not None:
+                user["mfa_secret"] = "*****"
         
         return {
             "users": users,
@@ -312,13 +320,16 @@ def create_user(user_data: dict, current_user: dict = Depends(get_current_user))
         # Hash du mot de passe
         hashed_password = get_password_hash(user_data.get("mdp", ""))
         
+        # Sanitize user input
+        sanitized_data = sanitize_dict(user_data)
+        
         # Créer le nouvel utilisateur
         new_user = {
-            "nom": user_data.get("nom"),
-            "prenom": user_data.get("prenom"),
-            "mail": user_data.get("mail"),
+            "nom": sanitized_data.get("nom"),
+            "prenom": sanitized_data.get("prenom"),
+            "mail": sanitized_data.get("mail"),
             "mdp": hashed_password,
-            "role": user_data.get("role", "USER")
+            "role": sanitized_data.get("role", "USER")
         }
         
         response = supabase.table("users") \
@@ -362,17 +373,20 @@ def update_user(user_id: str, user_data: dict, current_user: dict = Depends(get_
                 detail="Utilisateur non trouvé"
             )
         
+        # Sanitize user input
+        sanitized_data = sanitize_dict(user_data)
+        
         # Préparer les données de mise à jour
         update_data = {}
         
-        if "nom" in user_data:
-            update_data["nom"] = user_data["nom"]
-        if "prenom" in user_data:
-            update_data["prenom"] = user_data["prenom"]
-        if "mail" in user_data:
-            update_data["mail"] = user_data["mail"]
-        if "role" in user_data:
-            update_data["role"] = user_data["role"]
+        if "nom" in sanitized_data:
+            update_data["nom"] = sanitized_data["nom"]
+        if "prenom" in sanitized_data:
+            update_data["prenom"] = sanitized_data["prenom"]
+        if "mail" in sanitized_data:
+            update_data["mail"] = sanitized_data["mail"]
+        if "role" in sanitized_data:
+            update_data["role"] = sanitized_data["role"]
         if "mdp" in user_data and user_data["mdp"]:
             update_data["mdp"] = get_password_hash(user_data["mdp"])
         
@@ -400,9 +414,9 @@ def update_user(user_id: str, user_data: dict, current_user: dict = Depends(get_
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
+def delete_user(user_id: UUID4, current_user: dict = Depends(get_current_user)):
     """
-    Supprime un utilisateur - accessible uniquement aux ADMIN
+    Supprime un utilisateur (soft delete) - accessible uniquement aux ADMIN
     """
     verify_admin(current_user)
     
@@ -419,13 +433,18 @@ def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
                 detail="Utilisateur non trouvé"
             )
         
-        # Supprimer l'utilisateur
+        # Soft delete: marquer comme inactif au lieu de supprimer
+        from datetime import datetime, timezone
         supabase.table("users") \
-            .delete() \
+            .update({
+                "is_active": False,
+                "deleted_at": datetime.now(timezone.utc).isoformat(),
+                "deleted_by": current_user["id"]
+            }) \
             .eq("id", user_id) \
             .execute()
         
-        return {"message": "Utilisateur supprimé avec succès"}
+        return {"message": "Utilisateur marqué comme supprimé avec succès"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -433,8 +452,55 @@ def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
         )
 
 
+@router.post("/users/{user_id}/restore", status_code=status.HTTP_200_OK)
+def restore_user(user_id: UUID4, current_user: dict = Depends(get_current_user)):
+    """
+    Restaure un utilisateur soft-deleted - accessible uniquement aux ADMIN
+    """
+    verify_admin(current_user)
+    
+    try:
+        # Vérifier que l'utilisateur existe
+        existing_user = supabase.table("users") \
+            .select("id, is_active") \
+            .eq("id", user_id) \
+            .execute()
+        
+        if not existing_user.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Utilisateur non trouvé"
+            )
+        
+        db_user = existing_user.data[0]
+        
+        # Vérifier que l'utilisateur est bien désactivé
+        if db_user.get("is_active") == True:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="L'utilisateur est déjà actif"
+            )
+        
+        # Restaurer l'utilisateur
+        supabase.table("users") \
+            .update({
+                "is_active": True,
+                "deleted_at": None,
+                "deleted_by": None
+            }) \
+            .eq("id", user_id) \
+            .execute()
+        
+        return {"message": "Utilisateur restauré avec succès"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la restauration de l'utilisateur: {str(e)}"
+        )
+
+
 @router.post("/users/{user_id}/reset-mfa", status_code=status.HTTP_200_OK)
-def reset_user_mfa(user_id: str, current_user: dict = Depends(get_current_user)):
+def reset_user_mfa(user_id: UUID4, current_user: dict = Depends(get_current_user)):
     """
     Réinitialise le 2FA d'un utilisateur - accessible uniquement aux ADMIN
     """
@@ -500,7 +566,7 @@ def list_all_conversations(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/conversations/{conversation_id}", response_model=dict)
-def get_conversation_admin(conversation_id: str, current_user: dict = Depends(get_current_user)):
+def get_conversation_admin(conversation_id: UUID4, current_user: dict = Depends(get_current_user)):
     """
     Récupère une conversation spécifique avec ses messages - accessible uniquement aux ADMIN
     """

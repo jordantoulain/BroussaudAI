@@ -1,5 +1,22 @@
 # Changelog
 
+## 19/06/2026
+- [fix] - V-003: Ajout validation taille (10MB), extension et MIME type pour uploads /ai/embedding et /ai/chat/file
+- [fix] - V-004: Validation UUID4 parametres, masquage mfa_secret des selects admin
+- [fix] - V-005: Chiffrement Fernet des secrets MFA avant stockage (core/crypto_utils.py)
+- [fix] - V-011: Middleware security headers (X-Frame-Options, X-Content-Type-Options, etc.) + configuration CORS
+- [fix] - V-013: Rate limiting middleware avec limites /auth/login (5/min), /auth/register (3/min)
+- [fix] - V-014: Validation Pydantic complete (sanitize_name, validate_email_domain @broussaud.fr, validate_password_strength)
+- [fix] - V-016: Centralisation gestion connexions MariaDB (core/database.py) - Partiellement corrige (pooling require DBUtils)
+- [fix] - V-020: Reduction duree refresh_token de 7 jours a 1 jour
+- [fix] - V-021: Soft delete utilisateurs (colonnes is_active, deleted_at, deleted_by + mise a jour delete_user)
+- [fix] - V-022: Validation force mots de passe (couvert par V-014)
+- [fix] - V-023: Configuration CORS via ALLOWED_ORIGINS env (couvert par V-011)
+- [fix] - V-025: Sanitization des entrees avec bleach (core/sanitize.py) contre XSS
+- [fix] - V-032: Validation domaine email @broussaud.fr (couvert par V-014)
+- [docs] - Mise a jour rapport_securite.md avec statuts pour 10 vulnerabilites corrigees + 1 partiellement
+- [chore] - Ajout bleach a requirements.txt
+
 ## 2026-06-18
 - [feat] - Ajout outil generate_conversation_summary dans rag_service.py pour résumer une conversation complète
 - [feat] - Ajout table stats_ia dans supabase_init.py pour le suivi des statistiques IA par jour

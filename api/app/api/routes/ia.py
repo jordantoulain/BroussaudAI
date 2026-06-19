@@ -11,10 +11,59 @@ from pydantic import BaseModel
 from api.routes.auth import get_current_user
 from api.routes.admin import verify_admin
 from core.supabase_client import supabase
+from core.sanitize import sanitize_text, sanitize_filename
 from services.agent import get_rag_service, chat_with_agent
 from datetime import datetime
 
 router = APIRouter(prefix="/ai", tags=["Intelligence Artificielle"])
+
+# Constants for file upload validation
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.json', '.csv', '.xlsx', '.md'}
+ALLOWED_MIME_TYPES = {
+    'application/pdf',
+    'text/plain',
+    'application/json',
+    'text/csv',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/markdown'
+}
+
+async def validate_upload_file(file: UploadFile):
+    """Validate file upload: extension, MIME type, and size."""
+    if file is None:
+        return
+    
+    # Sanitize filename to prevent directory traversal
+    filename = sanitize_filename(file.filename)
+    file.filename = filename
+    
+    # Check extension
+    if not any(filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Extensions autorisees : {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    
+    # Check MIME type
+    if file.content_type not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Type MIME non autorise"
+        )
+    
+    # Check file size
+    file.file.seek(0, 2)  # Go to end of file
+    file_size = file.file.tell()
+    file.file.seek(0)  # Return to beginning
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_PAYLOAD_TOO_LARGE,
+            detail=f"Fichier trop volumineux. Maximum : {MAX_FILE_SIZE // 1024 // 1024}MB"
+        )
+    
+    return file
 
 
 def update_stats_ia(conversation_id=None, new_message=False, tokens_used=0, response_time_ms=0):
@@ -77,7 +126,8 @@ class UserPrompt(BaseModel):
 
 @router.post("/chat")
 async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_user)):
-    question = data.text
+    # Sanitize user input to prevent XSS
+    question = sanitize_text(data.text)
     conv_id = data.conversation_id
     if not question:
         raise HTTPException(
@@ -203,17 +253,13 @@ async def embed(
     # Vérifier que l'utilisateur est ADMIN
     verify_admin(current_user)
     
+    # Sanitize text input
+    if text is not None:
+        text = sanitize_text(text)
+    
     if file is not None:
-        # Extensions autorisées
-        ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.json', '.csv', '.xlsx', '.md'}
-        filename = file.filename.lower()
-        
-        # Vérifier l'extension
-        if not any(filename.endswith(ext) for ext in ALLOWED_EXTENSIONS):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Extensions autorisées : PDF, TXT, JSON, CSV, XLSX, MD"
-            )
+        # Valider le fichier (taille, extension, type MIME)
+        await validate_upload_file(file)
         
         # Vérifier si un document avec le même nom existe déjà
         existing_response = supabase.schema("vecs").table("documents_gemini") \

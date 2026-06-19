@@ -16,7 +16,10 @@ def init_db():
                         role VARCHAR(50) DEFAULT 'USER',
                         mfa_secret TEXT,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                        last_login_at TIMESTAMP WITH TIME ZONE
+                        last_login_at TIMESTAMP WITH TIME ZONE,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        deleted_at TIMESTAMP WITH TIME ZONE,
+                        deleted_by UUID
                     );
                 """)
                 

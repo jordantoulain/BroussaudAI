@@ -2,10 +2,11 @@ import os
 import jwt
 import bcrypt
 import time
+import re
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator, constr
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from core.supabase_client import supabase
 from httpx import RemoteProtocolError
@@ -31,21 +32,55 @@ def create_access_token(data: dict):
 
 def create_refresh_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(days=7)
+    expire = datetime.now(timezone.utc) + timedelta(days=1)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, os.environ.get("JWT_SECRET"), algorithm="HS256")
     return encoded_jwt
 
 class UserRegister(BaseModel):
-    nom: str
-    prenom: str
+    nom: constr(min_length=1, max_length=255, strip_whitespace=True)
+    prenom: constr(min_length=1, max_length=255, strip_whitespace=True)
     mail: EmailStr
-    mdp: str
+    mdp: constr(min_length=12, max_length=128)
     role: str = "USER"
+    
+    @field_validator('nom', 'prenom')
+    def sanitize_name(cls, v: str) -> str:
+        """Nettoyer les noms pour éviter les caractères dangereux."""
+        if not v:
+            raise ValueError('Le nom/prenom ne peut pas être vide')
+        # Retirer les caractères spéciaux sauf les espaces et tirets
+        cleaned = re.sub(r'[^\w\s\-]', '', v)
+        return cleaned.strip()
+    
+    @field_validator('mail')
+    def validate_email_domain(cls, v: EmailStr) -> EmailStr:
+        """Valider que l'email utilise le domaine autorise."""
+        if not v or '@' not in v:
+            raise ValueError('Email invalide')
+        domain = v.split('@')[1].lower()
+        if domain != 'broussaud.fr':
+            raise ValueError('Seuls les emails @broussaud.fr sont autorises')
+        return v.lower()
+    
+    @field_validator('mdp')
+    def validate_password_strength(cls, v: str) -> str:
+        """Valider la force du mot de passe."""
+        if len(v) < 12:
+            raise ValueError('Le mot de passe doit contenir au moins 12 caracteres')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Le mot de passe doit contenir au moins une majuscule')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Le mot de passe doit contenir au moins une minuscule')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Le mot de passe doit contenir au moins un chiffre')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            raise ValueError('Le mot de passe doit contenir au moins un caractere special')
+        return v
 
 class UserLogin(BaseModel):
     mail: EmailStr
-    mdp: str
+    mdp: constr(min_length=1, max_length=128)
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 
@@ -88,6 +123,14 @@ def login(user: UserLogin, request: Request):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou mot de passe incorrect.")
     
     db_user = response.data[0]
+    
+    # Vérifier si le compte est désactivé (soft delete)
+    if db_user.get("is_active") == False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Compte désactivé. Contactez l'administrateur."
+        )
+    
     if not verify_password(user.mdp, db_user["mdp"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou mot de passe incorrect.")
     

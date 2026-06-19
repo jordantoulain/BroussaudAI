@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from core.supabase_client import supabase
+from core.crypto_utils import encrypt_mfa_secret, decrypt_mfa_secret
 
 router = APIRouter(prefix="/mfa", tags=["MFA"])
 
@@ -23,7 +24,7 @@ def create_access_token(data: dict):
 
 def create_refresh_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(days=7)
+    expire = datetime.now(timezone.utc) + timedelta(days=1)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, os.environ.get("JWT_SECRET"), algorithm="HS256")
     return encoded_jwt
@@ -114,12 +115,13 @@ def verify_mfa(request: VerifyRequest, auth_request: Request):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Aucun secret TOTP configuré pour cet utilisateur"
             )
-        secret = mfa_data.data[0]["mfa_secret"]
+        # Dechiffrer le secret avant utilisation
+        secret = decrypt_mfa_secret(mfa_data.data[0]["mfa_secret"])
     else:
-        # First time setup - store the secret in DB
+        # First time setup - store the secret in DB (chiffre)
         try:
             supabase.table("users").update({
-                "mfa_secret": secret
+                "mfa_secret": encrypt_mfa_secret(secret)
             }).eq("id", request.user_id).execute()
         except Exception as e:
             raise HTTPException(
@@ -147,7 +149,7 @@ def verify_mfa(request: VerifyRequest, auth_request: Request):
     user_agent = auth_request.headers.get("user-agent", "Appareil inconnu")
     
     # Create session
-    expire_at = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+    expire_at = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
     try:
         session_resp = supabase.table("sessions").insert({
             "user_id": db_user["id"],
@@ -206,7 +208,7 @@ def skip_mfa_setup(request: EnrollRequest, auth_request: Request):
     db_user = user_data.data[0]
     user_agent = auth_request.headers.get("user-agent", "Appareil inconnu")
 
-    expire_at = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+    expire_at = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
     try:
         session_resp = supabase.table("sessions").insert({
             "user_id": db_user["id"],

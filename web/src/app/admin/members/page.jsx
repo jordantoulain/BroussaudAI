@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/services/api'
 import { TableRowSkeleton, TextSkeleton, ActionError, ActionSuccess } from '@/components/shared'
-import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2, X, ShieldBan, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Plus, Pencil, Trash2, X, ShieldBan, Check, RefreshCw } from 'lucide-react'
 import SideCanvas from '@/components/admin/SideCanvas'
 import UserForm from '@/components/admin/UserForm'
 import DeleteModal from '@/components/admin/DeleteModal'
@@ -31,6 +31,8 @@ export default function AdminMembersPage() {
   const [editingUser, setEditingUser] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [userToDelete, setUserToDelete] = useState(null)
+  const [showRestoreModal, setShowRestoreModal] = useState(false)
+  const [userToRestore, setUserToRestore] = useState(null)
   const [showResetMfaModal, setShowResetMfaModal] = useState(false)
   const [userToResetMfa, setUserToResetMfa] = useState(null)
   const [actionError, setActionError] = useState(null)
@@ -137,6 +139,24 @@ export default function AdminMembersPage() {
     }
   }, [userToDelete, fetchUsers])
 
+  const handleRestoreUser = useCallback(async () => {
+    if (!userToRestore) return
+    setActionLoading(true)
+    setActionError(null)
+    try {
+      await api.post(`/admin/users/${userToRestore.id}/restore`)
+      setActionSuccess('Utilisateur restauré avec succès')
+      fetchUsers()
+      setShowRestoreModal(false)
+      setUserToRestore(null)
+      setTimeout(() => setActionSuccess(null), 3000)
+    } catch (err) {
+      setActionError(err.response?.data?.detail || 'Erreur lors de la restauration')
+    } finally {
+      setActionLoading(false)
+    }
+  }, [userToRestore, fetchUsers])
+
   const handleResetMfa = useCallback(async (userId) => {
     setActionLoading(true)
     setActionError(null)
@@ -169,12 +189,19 @@ export default function AdminMembersPage() {
     setShowDeleteModal(true)
   }, [])
 
+  const openRestoreModal = useCallback((user) => {
+    setUserToRestore(user)
+    setShowRestoreModal(true)
+  }, [])
+
   const closeAll = useCallback(() => {
     setShowCreateCanvas(false)
     setShowEditCanvas(false)
     setEditingUser(null)
     setShowDeleteModal(false)
     setUserToDelete(null)
+    setShowRestoreModal(false)
+    setUserToRestore(null)
     setShowResetMfaModal(false)
     setUserToResetMfa(null)
     setActionError(null)
@@ -282,8 +309,10 @@ export default function AdminMembersPage() {
             {users.length > 0 ? (
               users.map((user) => {
                 const initials = (user.prenom.charAt(0) + user.nom.charAt(0)).toUpperCase()
+                // Par défaut, is_active est true si non défini (pour compatibilité avec les anciens utilisateurs)
+                const isDeleted = user.is_active === false
                 return (
-                  <tr key={user.id} className="hover:bg-neutral-200/50 transition-colors">
+                  <tr key={user.id} className={`hover:bg-neutral-200/50 transition-colors ${isDeleted ? 'opacity-60' : ''}`}>
                     <td className="px-6 py-4">
                       <div className={`w-8 h-8 flex items-center justify-center ${user.role === 'ADMIN' ? 'bg-red-500' : 'bg-violet-500'} rounded-md`}>
                         <span className="font-medium text-white text-md">{initials}</span>
@@ -317,6 +346,7 @@ export default function AdminMembersPage() {
                           onClick={() => openEditCanvas(user)}
                           className="p-2 cursor-pointer text-neutral-600 hover:text-violet-500 rounded-lg transition-colors"
                           title="Modifier"
+                          disabled={isDeleted}
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -325,9 +355,9 @@ export default function AdminMembersPage() {
                             setUserToResetMfa(user)
                             setShowResetMfaModal(true)
                           }}
-                          disabled={!user.mfa_secret}
+                          disabled={!user.mfa_secret || isDeleted}
                           className={`p-2 rounded-lg transition-colors ${
-                            user.mfa_secret 
+                            user.mfa_secret && !isDeleted
                               ? 'text-neutral-600 cursor-pointer hover:text-amber-500' 
                               : 'text-neutral-400 cursor-not-allowed opacity-50'
                           }`}
@@ -335,13 +365,23 @@ export default function AdminMembersPage() {
                         >
                           <ShieldBan className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => openDeleteModal(user)}
-                          className="p-2 cursor-pointer text-neutral-600 hover:text-red-500 rounded-lg transition-colors"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {isDeleted ? (
+                          <button
+                            onClick={() => openRestoreModal(user)}
+                            className="p-2 cursor-pointer text-neutral-600 hover:text-green-500 rounded-lg transition-colors"
+                            title="Restaurer"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => openDeleteModal(user)}
+                            className="p-2 cursor-pointer text-neutral-600 hover:text-red-500 rounded-lg transition-colors"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -448,6 +488,21 @@ export default function AdminMembersPage() {
         title="Confirmer la suppression"
         message="Êtes-vous sûr de vouloir supprimer"
         itemName={userToDelete ? `${userToDelete.prenom} ${userToDelete.nom}` : ''}
+      />
+
+      {/* Modale de restauration */}
+      <DeleteModal
+        isOpen={showRestoreModal}
+        onClose={closeAll}
+        onConfirm={handleRestoreUser}
+        title="Confirmer la restauration"
+        message="Êtes-vous sûr de vouloir restaurer"
+        itemName={userToRestore ? `${userToRestore.prenom} ${userToRestore.nom}` : ''}
+        confirmText="Restaurer"
+        confirmClassName="bg-green-500 hover:bg-green-600"
+        icon={RefreshCw}
+        iconClassName="text-green-500"
+        containerClassName="bg-green-100"
       />
     </div>
   )
