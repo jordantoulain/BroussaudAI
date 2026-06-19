@@ -104,10 +104,10 @@ function hexToRgb(hex) {
 
 // Calcule une couleur de pixel contrastée par rapport au fond
 // On assombrit les fonds clairs, on éclaircit les fonds sombres
-function derivePixelColor(bg) {
+function derivePixelColor(bg, shift) {
   const luminance = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2]
-  const shift = luminance > 0.5 ? -0.02 : 0.02
-  return bg.map(c => Math.max(0, Math.min(1, c + shift)))
+  const s = luminance > 0.5 ? -shift : shift
+  return bg.map(c => Math.max(0, Math.min(1, c + s)))
 }
 
 function createShader(gl, type, source) {
@@ -134,13 +134,13 @@ function createProgram(gl, vs, fs) {
   return program
 }
 
-export default function AnimatedBackground({ bgColor = '#ffffff', squareSize = 30 }) {
+export default function AnimatedBackground({ bgColor = '#ffffff', squareSize = 30, shift = 0.02 }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     const bg = hexToRgb(bgColor)
-    const px = derivePixelColor(bg)
+    const px = derivePixelColor(bg, shift)
 
     // powerPreference: laisse le driver choisir le GPU discret si dispo,
     // desynchronized: réduit la latence d'affichage sur les navigateurs supportés
