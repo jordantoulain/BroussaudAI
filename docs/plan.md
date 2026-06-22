@@ -150,8 +150,8 @@
 | **Durée totale** | [X] semaines | 15 semaines | ✅ |
 | **Heures investies** | [X] heures | [Y] heures | [✅/⚠️/❌] |
 | **Features implémentées** | 25+ | 25 | ✅ |
-| **Routes API** | 30+ | 30 | ✅ |
-| **Composants React** | 40+ | 40 | ✅ |
+| **Routes API** | 32+ | 32 | ✅ |
+| **Composants React** | 42+ | 42 | ✅ |
 | **Tests unitaires** | 0% | 80% | ❌ |
 | **Tests d'intégration** | 50% | 100% | ⚠️ |
 | **Documentation** | 100% | 100% | ✅ |

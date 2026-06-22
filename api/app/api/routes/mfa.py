@@ -146,7 +146,8 @@ def verify_mfa(request: VerifyRequest, auth_request: Request):
         )
     
     db_user = user_data.data[0]
-    user_agent = auth_request.headers.get("user-agent", "Appareil inconnu")
+    # Prioriser le header personnalise, sinon utiliser user-agent
+    user_agent = auth_request.headers.get("x-device-info") or auth_request.headers.get("user-agent", "Appareil inconnu")
     
     # Create session
     expire_at = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
@@ -206,7 +207,8 @@ def skip_mfa_setup(request: EnrollRequest, auth_request: Request):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable")
 
     db_user = user_data.data[0]
-    user_agent = auth_request.headers.get("user-agent", "Appareil inconnu")
+    # Prioriser le header personnalise, sinon utiliser user-agent
+    user_agent = auth_request.headers.get("x-device-info") or auth_request.headers.get("user-agent", "Appareil inconnu")
 
     expire_at = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
     try:

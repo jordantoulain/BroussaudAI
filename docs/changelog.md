@@ -9,6 +9,7 @@
 
 - [feat] - Ajout du niveau de confiance (0-100%) dans les réponses IA, affiché dans l'infobulle de la loupe avec barre de progression colorée (vert/jaune/orange/rouge). Modifications : system_prompt.txt (règle de confiance), ia.py (extraction du champ), messageFormatters.js (gestion du champ), Message.jsx (affichage avec getConfidenceColor).
 - [feat] - **Graphiques ApexCharts** : Ajout de la capacité à l'IA de générer des graphiques interactifs (line, bar, pie, area, etc.) via le pattern `%CHART:{config}%ENDCHART%`. Composants : ApexChartComponent.jsx (affichage), chartParser.js (parsing), Message.jsx (intégration). Documentation : system_prompt.txt (règles pour l'IA), features.md (documentation technique).
+- [feat] - **Gestion des appareils connectés** : Ajout d'un bouton dans UserProfile.jsx pour afficher la liste des appareils connectés (sessions). Inclut SideCanvas réutilisable, SessionsList.jsx pour afficher les sessions avec device_info, date de création, expiration, et bouton de déconnexion forcée. Backend API : GET /sessions/, DELETE /sessions/{session_id} (api/app/api/routes/sessions.py). Composants : SideCanvas.jsx, SessionsList.jsx. Sécurité : vérification JWT que la session appartient à l'utilisateur avant suppression.
 
 ---
 

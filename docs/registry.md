@@ -62,6 +62,7 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | `api/routes/conversations.py` | Routes conversations utilisateur (non-admin) | GET /conversations, GET /conversations/{id}, GET /conversations/archives, GET /conversations/archives/{id}, DELETE /conversations/{id}, PATCH /conversations/{id}/pin | `verify_conversation_owner()` | C1.2, C2.2 |
 | `api/routes/mfa.py` | Routes MFA (TOTP) | POST /mfa/enroll, POST /mfa/verify, POST /mfa/skip, GET /mfa/status/{user_id} | - | C2.3 |
 | `api/routes/reviews.py` | Routes pour les avis | POST /reviews, PUT /reviews/{id} | - | C1.2 |
+| `api/routes/sessions.py` | Routes pour les sessions utilisateur | GET /sessions/, DELETE /sessions/{session_id} | `get_current_user_from_token()` | C1.2, C2.3 |
 
 ---
 
@@ -150,6 +151,7 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | `components/shared/Tag.jsx` | `tag` | Badge pour afficher un tag avec style cohérent | Classification RAG | C1.2 |
 | `components/shared/ErrorAlert.jsx` | `error, className` | Alerte erreur (déplacé de components/auth/) | Gestion des erreurs | C1.2 |
 | `components/ui/Dropdown.jsx` | `buttonContent, buttonClassName, menuClassName, children` | Dropdown générique | Menus déroulants | C1.2 |
+| `components/ui/SideCanvas.jsx` | `isOpen, onClose, title, children, className` | Panneau latéral glissant depuis la droite avec animation, gestion Échap, clic extérieur | Affichage de contenu latéral | C1.2 |
 
 ---
 
@@ -179,7 +181,8 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | `components/chat/NewConversationButton.jsx` | `onClick` | Bouton nouvelle conversation | Création de chat | C1.2 |
 | `components/chat/ConversationList.jsx` | `conversations, activeConversationId, onSelectConversation, onDeleteConversation, onTogglePin, isLoading` | Liste conversations avec 3 skeletons si isLoading, sépare en sections "Épinglées" et "Historique" | Liste des conversations | C1.2 |
 | `components/chat/ConversationItem.jsx` | `conversation, isActive, onClick, onDelete, onTogglePin` | Item conversation avec bouton pin (icône Pin, ambre-500 si épinglé) et bouton delete, boutons visibles au hover | Élément de la liste | C1.2 |
-| `components/chat/UserProfile.jsx` | `userInfo, isLoading` | Profil utilisateur avec dropdown, fond rouge-500 pour ADMIN, skeleton si isLoading | Profil utilisateur | C1.2 |
+| `components/chat/UserProfile.jsx` | `userInfo, isLoading` | Profil utilisateur avec dropdown, fond rouge-500 pour ADMIN, skeleton si isLoading, bouton "Appareils connectés" | Profil utilisateur | C1.2 |
+| `components/chat/SessionsList.jsx` | `isOpen, onClose` | Liste des appareils connectés (sessions) avec device_info, dates de création/expiration, bouton de déconnexion forcée | Gestion des sessions | C1.2, C2.3 |
 | `components/chat/ChatInput.jsx` | `input, onChange, onSubmit, isLoading` | Input chat avec texte de prévention et gestion du chargement | Saisie utilisateur | C1.2 |
 | `components/chat/ChatHeader.jsx` | `title, isArchived` | Header chat avec support titre et icône archive | En-tête du chat | C1.2 |
 | `components/chat/MessageList.jsx` | `messages, isLoading, messagesEndRef, isAdminView, userEmail` | Liste messages avec scroll, masque désactivé si isAdminView=true | Liste des messages | C1.2 |
@@ -291,6 +294,8 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 |--------|---------|-------------|-------------|
 | `/api/refresh` | POST | Rafraîchit access_token via refresh_token | C1.3, C2.3 |
 | `/api/user` | GET | Récupère infos user (inclut role) depuis JWT | C1.2 |
+| `/sessions/` | GET | Récupère les sessions de l'utilisateur connecté | C1.2, C2.3 |
+| `/sessions/{session_id}` | DELETE | Force la déconnexion d'une session spécifique (avec vérification propriétaire) | C1.2, C2.3 |
 
 ---
 
@@ -351,13 +356,13 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | Catégorie | Nombre | Description |
 |-----------|--------|-------------|
 | **Modules Backend** | 8+ | Core, services, routes |
-| **Composants Frontend** | 42+ | UI, Auth, Chat, Admin |
+| **Composants Frontend** | 44+ | UI, Auth, Chat, Admin |
 | **Fonctions Backend** | 25+ | Auth, Admin, IA, Conversations |
 | **Fonctions Frontend** | 11+ | Utils, Helpers |
 | **Hooks Personnalisés** | 5+ | useChat, useUserInfo, useConversations |
 | **Outils MCP** | 9+ | Stats, performances, alertes |
 | **Pages** | 15+ | Auth, Chat, Admin |
-| **API Routes** | 30+ | Backend + Frontend |
+| **API Routes** | 32+ | Backend + Frontend |
 
 ---
 

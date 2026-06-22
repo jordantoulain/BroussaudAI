@@ -17,6 +17,7 @@ export default function RegisterPage() {
   
   const handleSubmit = async (formData) => {
     setError(null)
+    formData.append('userAgent', window.navigator.userAgent)
     const result = await registerAction(formData)
     if (result?.error) {
       setError(result.error)

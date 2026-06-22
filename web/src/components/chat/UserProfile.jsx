@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { LogOut } from 'lucide-react'
+import { LogOut, MonitorSmartphone } from 'lucide-react'
 import Dropdown from '@/components/ui/Dropdown'
+import SessionsList from '@/components/chat/SessionsList'
 import { AvatarSkeleton, TextSkeleton } from '@/components/shared'
 import { getRoleColor } from '@/utils/userUtils'
 
@@ -18,6 +20,9 @@ import { getRoleColor } from '@/utils/userUtils'
  * @returns {JSX.Element}
  */
 export default function UserProfile({ userInfo, isLoading = false }) {
+  // État pour le SideCanvas des sessions
+  const [showSessions, setShowSessions] = useState(false)
+  
   // Génération des initiales pour l'avatar
   const initials = userInfo ? (userInfo.prenom.charAt(0) + userInfo.nom.charAt(0)).toUpperCase() : 'U'
   
@@ -55,7 +60,18 @@ export default function UserProfile({ userInfo, isLoading = false }) {
   
   return (
     <div className="mt-auto pt-4">
-      <Dropdown buttonContent={buttonContent} openUpwards buttonClassName="flex items-center justify-between cursor-pointer w-full px-2 pr-3 py-1.5 rounded-lg hover:bg-neutral-300 active:scale-99 transition-all ease-in-out text-neutral-800">
+      {/* Dropdown de déconnexion avec bouton appareils connectés */}
+      <Dropdown buttonContent={buttonContent} openUpwards buttonClassName="flex gap-2 items-center justify-between cursor-pointer w-full px-2 pr-3 py-1.5 rounded-lg hover:bg-neutral-300 active:scale-99 transition-all ease-in-out text-neutral-800">
+        {/* Bouton pour afficher les appareils connectés */}
+        <button
+          onClick={() => setShowSessions(true)}
+          className="flex cursor-pointer items-center gap-3 w-full px-2 py-2 rounded-md hover:bg-neutral-100 transition-colors text-neutral-700 text-left text-sm"
+        >
+          <MonitorSmartphone className="w-4 h-4 ml-2" />
+          <span>Appareils connectés</span>
+        </button>
+        
+        {/* Bouton de déconnexion */}
         <Link
           href="/logout"
           className="flex items-center gap-3 w-full px-2 py-2 rounded-md hover:bg-neutral-100 transition-colors text-neutral-700 text-left text-sm"
@@ -64,6 +80,12 @@ export default function UserProfile({ userInfo, isLoading = false }) {
           <span>Déconnexion</span>
         </Link>
       </Dropdown>
+      
+      {/* SideCanvas pour la liste des sessions */}
+      <SessionsList 
+        isOpen={showSessions} 
+        onClose={() => setShowSessions(false)} 
+      />
     </div>
   )
 }

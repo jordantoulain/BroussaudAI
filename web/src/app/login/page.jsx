@@ -15,6 +15,8 @@ export default function LoginPage() {
   
   const handleSubmit = async (formData) => {
     setError(null)
+    // Ajouter le userAgent au formData
+    formData.append('userAgent', window.navigator.userAgent)
     const result = await loginAction(formData)
     if (result?.error) {
       setError(result.error)

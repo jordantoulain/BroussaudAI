@@ -94,6 +94,7 @@ export default function MFAClient() {
     const formData = new FormData()
     formData.append('user_id', userId)
     formData.append('code', code)
+    formData.append('userAgent', window.navigator.userAgent)
     if (setupMode) {
       formData.append('secret', secret)
     }
@@ -111,6 +112,7 @@ export default function MFAClient() {
 
     const formData = new FormData()
     formData.append('user_id', userId)
+    formData.append('userAgent', window.navigator.userAgent)
 
     const result = await skipMFAAction(formData)
     if (result?.error) {

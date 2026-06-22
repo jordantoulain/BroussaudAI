@@ -8,13 +8,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 export async function loginAction(formData) {
   const mail = formData.get('mail')
   const mdp = formData.get('mdp')
+  const userAgent = formData.get('userAgent') || 'Appareil inconnu'
 
   let redirectUrl = null
 
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Device-Info': userAgent
+      },
       body: JSON.stringify({ mail, mdp }),
     })
 
@@ -62,11 +66,15 @@ export async function registerAction(formData) {
   const prenom = formData.get('prenom')
   const mail = formData.get('mail')
   const mdp = formData.get('mdp')
+  const userAgent = formData.get('userAgent') || 'Appareil inconnu'
 
   try {
     const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Device-Info': userAgent
+      },
       body: JSON.stringify({ nom, prenom, mail, mdp }),
     })
 
@@ -107,11 +115,15 @@ export async function verifyMFAAction(formData) {
   const userId = formData.get('user_id')
   const code = formData.get('code')
   const secret = formData.get('secret')
+  const userAgent = formData.get('userAgent') || 'Appareil inconnu'
 
   try {
     const response = await fetch(`${API_URL}/mfa/verify`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Device-Info': userAgent
+      },
       body: JSON.stringify({ user_id: userId, code, secret: secret || undefined }),
     })
 
@@ -144,11 +156,15 @@ export async function verifyMFAAction(formData) {
 
 export async function skipMFAAction(formData) {
   const userId = formData.get('user_id')
+  const userAgent = formData.get('userAgent') || 'Appareil inconnu'
 
   try {
     const response = await fetch(`${API_URL}/mfa/skip`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Device-Info': userAgent
+      },
       body: JSON.stringify({ user_id: userId }),
     })
 
