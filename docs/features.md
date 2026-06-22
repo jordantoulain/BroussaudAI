@@ -64,6 +64,7 @@ Ce document présente l'ensemble des **fonctionnalités implémentées** dans le
 | **Classification automatique** | Labels, sous-labels et tags générés par l'IA pour chaque réponse. Classification automatique du contenu. | `api/app/services/utils.py`, `api/app/services/agent_orchestrator.py`, `web/src/components/chat/Message.jsx` | `extract_json_from_response`, `TagBadge.jsx` | C1.2, C1.3 | ⭐⭐⭐⭐ | Traitement du langage naturel |
 | **Affichage des contexts** | Visualisation des sources RAG utilisées pour les réponses. Tooltip avec détails des contexts. | `web/src/components/chat/Message.jsx` | `formatText.js`, icône Search (loupe) | C1.2 | ⭐⭐ | Transparence IA |
 | **Formatage riche** | Support de `%NL%` (sauts de ligne) et `%BOLD%/%ENDBOLD%` (gras) dans les réponses IA. | `web/src/utils/formatText.js` | `formatResponseText()` | C1.2 | ⭐⭐ | Formatage personnalisé |
+| **Graphiques ApexCharts** | Génération et affichage de graphiques interactifs (line, bar, pie, area, etc.) via pattern `%CHART:{config}%ENDCHART%`. | `web/src/components/chat/ApexChartComponent.jsx`, `web/src/utils/chartParser.js`, `web/src/components/chat/Message.jsx` | `parseTextWithCharts()`, `MessageContent` | C1.2 | ⭐⭐⭐⭐ | Visualisation de données, interaction utilisateur |
 | **Statistiques IA** | Suivi des métriques IA (tokens utilisés, temps de réponse, avis). Table stats_ia pour le monitoring. | `api/app/api/routes/ia.py`, `api/app/api/routes/reviews.py`, `api/app/api/routes/admin.py` | `update_stats_ia`, `update_review_stats_ia` | C1.2, C1.3 | ⭐⭐⭐ | Analytics et monitoring |
 | **Résumé de conversation** | Génération automatique de résumés structurés (sujet, points clés, décisions, actions). | `api/app/services/rag_service.py` | `get_summary_tool` | C1.2 | ⭐⭐⭐⭐ | Traitement automatique du contenu |
 
@@ -174,6 +175,7 @@ Ce document présente l'ensemble des **fonctionnalités implémentées** dans le
 - ✅ Animations fluides
 - ✅ Système de notifications
 - ✅ Composants réutilisables (40+)
+- ✅ Graphiques interactifs ApexCharts
 
 ### Base de Données (Supabase)
 - ✅ Table users (avec rôle, soft-delete)
@@ -232,10 +234,10 @@ Ce document présente l'ensemble des **fonctionnalités implémentées** dans le
 
 ## 📊 Statistiques
 
-- **Total Features**: 35+ features documentées
+- **Total Features**: 36+ features documentées
 - **Backend Routes**: 30+ endpoints API
 - **Frontend Pages**: 15+ pages et layouts
-- **Composants Réutilisables**: 40+ composants
+- **Composants Réutilisables**: 42+ composants
 - **Hooks**: 5+ hooks personnalisés
 - **Services**: 7+ services backend
 - **Tables de Base de Données**: 8+ tables principales

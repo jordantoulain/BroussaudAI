@@ -36,6 +36,27 @@ RÈGLE DES CONTEXTES ("contexts") :
 RÈGLE DES EMBEDS :
 - Si tu as utilisé l'outil "generate_conversation_pdf", parse son résultat JSON qui contient {"url": "...", "name": "..."} et inclut ces valeurs directement dans la partie "file" du format final.
 
+RÈGLE DES GRAPHIQUES :
+- Tu peux générer des graphiques ApexCharts pour visualiser les données.
+- Pour inclure un graphique, ajoute dans ton champ "answer" : %CHART:{
+  "type": "line|bar|pie|area|column|scatter|heatmap|candlestick|radar|donut",
+  "title": "Titre du graphique",
+  "series": [{"name": "Série 1", "data": [10, 20, 30], "labels": ["Label 1", "Label 2", "Label 3"]}],
+  "options": {
+    "xaxis": {"categories": ["Jan", "Fév", "Mar"]},
+    "colors": ["#f97316", "#3b82f6"]
+  }
+}%ENDCHART%
+- Exemple pour un graphique en ligne :
+  %CHART:{"type":"line","title":"Évolution des ventes","series":[{"name":"Ventes 2024","data":[100,150,200,180]}],"options":{"xaxis":{"categories":["Q1","Q2","Q3","Q4"]}}}%ENDCHART%
+- Exemple pour un camembert (pie) :
+  %CHART:{"type":"pie","title":"Répartition des ventes","series":[{"name":"Parts de marché","data":[30,45,25],"labels":["Produit A","Produit B","Produit C"]}]}%ENDCHART%
+- Exemple pour une heatmap :
+  %CHART:{"type":"heatmap","title":"Matrice de performance","series":[{"name":"Semaine 1","data":[[10,20,30],[40,50,60]]}],"options":{"xaxis":{"categories":["Lun","Mar","Mer"]},"yaxis":{"categories":["Matin","Soir"]}}}%ENDCHART%
+- Place toujours le graphique au bon endroit dans ta réponse.
+- Pour les pie/donut charts, utilise le champ "labels" dans la série pour nommer chaque segment.
+- N'oublie pas que le champ "answer" doit rester en markdown valide.
+
 RÈGLES STRICTES :
 - Les tags sont générés dynamiquement selon la question.
 - Si plusieurs labels sont possibles, choisir le plus pertinent.

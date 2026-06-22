@@ -188,6 +188,7 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | `components/chat/TagBadge.jsx` | `tag` | Badge pour afficher un tag | Classification | C1.2 |
 | `components/chat/ChatInput.jsx` | `input, onChange, onSubmit, isLoading` | Input chat avec gestion des états | Interaction utilisateur | C1.2 |
 | `components/chat/LoadingIndicator.jsx` | `className` | Indicateur de chargement animé | États de chargement | C1.2 |
+| `components/chat/ApexChartComponent.jsx` | `config` | Graphique ApexCharts complet avec support de tous les types (line, bar, pie, area, etc.), toolbar inclus, responsive | Visualisation de données | C1.2 |
 
 ---
 
@@ -314,6 +315,7 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | `utils/pageColors.js` | `PAGE_COLORS`, `getPageColor()` | Gestion centralisée des couleurs par page | Cohérence visuelle | C1.2 |
 | `utils/messageFormatters.js` | `parseAPIResponse`, `createAIMessage`, `createUserMessage`, `createWelcomeMessage`, `createErrorMessage`, `formatHistoricalMessages` | Formatage centralisé des messages chat | Gestion des messages | C1.2 |
 | `utils/userUtils.js` | `getRoleColor(role)` | Retourne classe Tailwind pour couleur de rôle (ADMIN=red-500, USER=violet-500) | Affichage des rôles | C1.2 |
+| `utils/chartParser.js` | `parseTextWithCharts()`, `TextWithCharts`, `hasCharts()`, `extractCharts()` | Parsing et extraction des configurations de graphiques ApexCharts du texte | Affichage des graphiques IA | C1.2 |
 
 ---
 
@@ -349,9 +351,9 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | Catégorie | Nombre | Description |
 |-----------|--------|-------------|
 | **Modules Backend** | 8+ | Core, services, routes |
-| **Composants Frontend** | 40+ | UI, Auth, Chat, Admin |
+| **Composants Frontend** | 42+ | UI, Auth, Chat, Admin |
 | **Fonctions Backend** | 25+ | Auth, Admin, IA, Conversations |
-| **Fonctions Frontend** | 10+ | Utils, Helpers |
+| **Fonctions Frontend** | 11+ | Utils, Helpers |
 | **Hooks Personnalisés** | 5+ | useChat, useUserInfo, useConversations |
 | **Outils MCP** | 9+ | Stats, performances, alertes |
 | **Pages** | 15+ | Auth, Chat, Admin |

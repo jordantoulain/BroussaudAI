@@ -8,6 +8,7 @@
 ## 22/06/2026 - Semaine 5 (Nouvelle Feature)
 
 - [feat] - Ajout du niveau de confiance (0-100%) dans les réponses IA, affiché dans l'infobulle de la loupe avec barre de progression colorée (vert/jaune/orange/rouge). Modifications : system_prompt.txt (règle de confiance), ia.py (extraction du champ), messageFormatters.js (gestion du champ), Message.jsx (affichage avec getConfidenceColor).
+- [feat] - **Graphiques ApexCharts** : Ajout de la capacité à l'IA de générer des graphiques interactifs (line, bar, pie, area, etc.) via le pattern `%CHART:{config}%ENDCHART%`. Composants : ApexChartComponent.jsx (affichage), chartParser.js (parsing), Message.jsx (intégration). Documentation : system_prompt.txt (règles pour l'IA), features.md (documentation technique).
 
 ---
 

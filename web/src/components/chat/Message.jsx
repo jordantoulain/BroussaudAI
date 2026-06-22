@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Search, FileText, MessageCircle } from 'lucide-react'
 import TagBadge from './TagBadge'
 import MessageMeta from './MessageMeta'
 import ReviewModal from './ReviewModal'
+import ApexChartComponent from './ApexChartComponent'
 import { formatResponseText } from '@/utils/formatText'
+import { parseTextWithCharts } from '@/utils/chartParser'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -43,6 +45,36 @@ function getConfidenceColor(confidence) {
   if (confidenceValue >= 60) return 'bg-yellow-400'
   if (confidenceValue >= 40) return 'bg-orange-400'
   return 'bg-red-400'
+}
+
+/**
+ * Composant pour rendre le contenu avec markdown et graphiques intégrés
+ */
+function MessageContent({ text }) {
+  const parsedContent = useMemo(() => parseTextWithCharts(text), [text])
+
+  if (!parsedContent || parsedContent.length === 0) {
+    return null
+  }
+
+  return (
+    <>
+      {parsedContent.map((item, index) => {
+        if (item.type === 'chart') {
+          return <ApexChartComponent key={`chart-${index}`} config={item.content} className="my-4" />
+        }
+        return (
+          <ReactMarkdown 
+            key={`text-${index}`}
+            remarkPlugins={[remarkGfm]} 
+            rehypePlugins={[rehypeRaw]}
+          >
+            {item.content}
+          </ReactMarkdown>
+        )
+      })}
+    </>
+  )
 }
 
 /**
@@ -111,12 +143,7 @@ export default function Message({ message, userEmail, isAdminView = false }) {
         {/* Réponse avec icônes de contexte et avis */}
         <div className="flex items-start gap-2">
           <div className="flex-1 text-neutral-800 font-light markdown-content">
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]} 
-              rehypePlugins={[rehypeRaw]}
-            >
-              {prepareMarkdownText(data?.answer || data?.response || message.response || text || '')}
-            </ReactMarkdown>
+            <MessageContent text={prepareMarkdownText(data?.answer || data?.response || message.response || text || '')} />
           </div>
           
         {/* Icônes de droite (contexte et avis) */}
