@@ -8,7 +8,7 @@
 
 ## 📚 Contexte Pédagogique
 
-Ce projet s'inscrit dans le cadre d'un **stage de fin d'étude du BTS SIO** réalisé au sein de l'entreprise **Broussaud**, spécialisée dans la fabrication de chaussettes de qualité en Nouvelle-Aquitaine. L'objectif pédagogique est de concevoir et développer une **application full-stack d'intelligence artificielle conversationnelle** dédiée à l'entreprise, permettant aux collaborateurs d'accéder à une assistance technique et informationnelle basée sur les données internes.
+Ce projet s'inscrit dans le cadre d'un **stage de fin de première année du BTS SIO** réalisé au sein de l'entreprise **Broussaud**, spécialisée dans la fabrication de chaussettes de qualité en Nouvelle-Aquitaine. L'objectif pédagogique est de concevoir et développer une **application full-stack d'intelligence artificielle conversationnelle** dédiée à l'entreprise, permettant aux collaborateurs d'accéder à une assistance technique et informationnelle basée sur les données internes.
 
 **Période de stage:** 5 semaines.
 
