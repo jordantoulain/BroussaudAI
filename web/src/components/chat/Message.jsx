@@ -33,6 +33,19 @@ function prepareMarkdownText(text) {
 }
 
 /**
+ * Retourne la classe de couleur Tailwind en fonction du niveau de confiance
+ * @param {number} confidence - Niveau de confiance (0-100)
+ * @returns {string} Classe de couleur Tailwind
+ */
+function getConfidenceColor(confidence) {
+  const confidenceValue = typeof confidence === 'number' ? confidence : 50
+  if (confidenceValue >= 80) return 'bg-green-400'
+  if (confidenceValue >= 60) return 'bg-yellow-400'
+  if (confidenceValue >= 40) return 'bg-orange-400'
+  return 'bg-red-400'
+}
+
+/**
  * Composant molécule pour afficher un message (utilisateur ou IA)
  * 
  * @param {Object} props
@@ -46,6 +59,7 @@ function prepareMarkdownText(text) {
  * @param {string} [props.message.data.sub_label] - Sous-label du message
  * @param {string[]} [props.message.data.tags] - Tags du message
  * @param {string[]} [props.message.data.contexts] - Liste des contextes/fichiers utilisés
+ * @param {number} [props.message.data.confidence] - Niveau de confiance (0-100)
  * @param {Object} [props.message.data.file] - Fichier associé au message
  * @param {string} [props.message.data.file.name] - Nom du fichier
  * @param {string} [props.message.data.file.url] - URL du fichier
@@ -107,16 +121,40 @@ export default function Message({ message, userEmail, isAdminView = false }) {
           
         {/* Icônes de droite (contexte et avis) */}
         <div className="relative flex flex-col gap-2 flex-shrink-0">
-          {/* Icône loupe avec tooltip contextes */}
-          {(data?.contexts || message.contexts) && (data?.contexts?.length > 0 || message.contexts?.length > 0) && (
+          {/* Icône loupe avec tooltip contextes et confiance */}
+          {(data?.contexts || message.contexts || data?.confidence !== undefined || message.confidence !== undefined) && (
             <div className="relative group">
               <Search className="w-4 h-4 text-neutral-500 cursor-help hover:text-orange-500 transition-colors" />
-              <div className="absolute bottom-full right-0 mb-2 w-max p-2 bg-neutral-800 text-white text-xs rounded-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                {(data?.contexts || message.contexts || []).map((context, index) => (
-                  <div key={index} className="mb-1 last:mb-0">
-                    {context}
+              <div className="absolute bottom-full right-0 mb-2 w-max max-w-xs p-3 bg-neutral-800 text-white text-xs rounded-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                {/* Niveau de confiance */}
+                {(data?.confidence !== undefined || message.confidence !== undefined) && (
+                  <div className="mb-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium">Confiance:</span>
+                      <span className="text-white">
+                        {data?.confidence || message.confidence || 50}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-neutral-600 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${getConfidenceColor(data?.confidence || message.confidence || 50)}`}
+                        style={{ width: `${data?.confidence || message.confidence || 50}%` }}
+                      />
+                    </div>
                   </div>
-                ))}
+                )}
+                
+                {/* Contextes */}
+                {(data?.contexts || message.contexts || []).length > 0 && (
+                  <div>
+                    <span className="font-medium">Sources:</span>
+                    {(data?.contexts || message.contexts || []).map((context, index) => (
+                      <div key={index} className="mt-1">
+                        {context}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

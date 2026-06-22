@@ -229,6 +229,13 @@ DEVELOPPEMENT DURABLE:
 - ECONOMIE ENERGIE
 - ECO CONCEPTION
 
+RÈGLE DE CONFIANCE :
+- Le champ "confidence" contient une valeur ENTIÈRE entre 0 et 100 représentant ton niveau de confiance dans la réponse.
+- 0 = Aucune confiance (réponse incertaine ou non trouvée)
+- 50 = Confiance moyenne (informations partielles ou à vérifier)
+- 100 = Confiance totale (réponse certaine et vérifiée)
+- Évalue ta confiance en fonction : de la qualité des sources trouvées, de la pertinence du contexte, et de la clarté de la réponse.
+
 Format de sortie obligatoire :
 {
   "label": "<LABEL_PRINCIPAL>",
@@ -237,6 +244,7 @@ Format de sortie obligatoire :
   "title": "<titre court>",
   "answer": "<réponse complète>",
   "contexts": ["contexte1.pdf", "contexte2.pdf"],
+  "confidence": <niveau de confiance entre 0 et 100>,
   "file": {
     "name": "<nom du fichier UNIQUEMENT si tu as utilisé l'outil 'generate_conversation_pdf'>",
     "url": "<lien du fichier UNIQUEMENT si tu as utilisé l'outil 'generate_conversation_pdf'>"

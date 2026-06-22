@@ -5,6 +5,12 @@
 
 ---
 
+## 22/06/2026 - Semaine 5 (Nouvelle Feature)
+
+- [feat] - Ajout du niveau de confiance (0-100%) dans les réponses IA, affiché dans l'infobulle de la loupe avec barre de progression colorée (vert/jaune/orange/rouge). Modifications : system_prompt.txt (règle de confiance), ia.py (extraction du champ), messageFormatters.js (gestion du champ), Message.jsx (affichage avec getConfidenceColor).
+
+---
+
 ## 📅 Historique des Modifications
 
 ### Format des entrées
@@ -14,7 +20,7 @@
 
 ---
 
-## 19/06/2026 - Semaine 14 (Sécurité et Audit)
+## 19/06/2026 - Semaine 4 (Sécurité et Audit)
 
 ### 🔒 Corrections de Sécurité (Compétences: C2.2, C2.3)
 
@@ -46,7 +52,7 @@
 
 ---
 
-## 18/06/2026 - Semaine 13 (Statistiques et Dashboard)
+## 18/06/2026 - Semaine 4 (Statistiques et Dashboard)
 
 ### 📊 Nouvelles Fonctionnalités (Compétences: C1.2, C1.3)
 
@@ -66,7 +72,7 @@
 
 ---
 
-## 17/06/2026 - Semaine 12 (Gestion des Conversations)
+## 17/06/2026 - Semaine 4 (Gestion des Conversations)
 
 ### 🗂️ Fonctionnalités de Gestion (Compétences: C1.2, C1.3)
 
@@ -94,7 +100,7 @@
 
 ---
 
-## 16/06/2026 - Semaine 11 (Optimisation et Build)
+## 16/06/2026 - Semaine 4 (Optimisation et Build)
 
 ### ⚡ Optimisations (Compétences: C1.2, C1.3)
 
@@ -112,7 +118,7 @@
 
 ---
 
-## 15/06/2026 - Semaine 10 (UI/UX et Cleanup)
+## 15/06/2026 - Semaine 4 (UI/UX et Cleanup)
 
 ### 🎨 Améliorations UI (Compétences: C1.2)
 
@@ -135,7 +141,7 @@
 
 ---
 
-## 11/06/2026 - Semaine 9 (MFA et Documents)
+## 11/06/2026 - Semaine 3 (MFA et Documents)
 
 ### 🔐 Authentification à Deux Facteurs (Compétences: C2.3, C1.2)
 
@@ -174,7 +180,7 @@
 
 ---
 
-## 10/06/2026 - Semaine 8 (Conversations et Refactoring)
+## 10/06/2026 - Semaine 3 (Conversations et Refactoring)
 
 ### 💬 Gestion des Conversations (Compétences: C1.2, C1.3)
 
@@ -231,7 +237,7 @@
 
 ---
 
-## 09/06/2026 - Semaine 7 (Agent RAG et Skeletons)
+## 09/06/2026 - Semaine 3 (Agent RAG et Skeletons)
 
 ### 🤖 Refactoring Agent RAG (Compétences: C1.2, C1.3)
 
@@ -265,7 +271,7 @@
 
 ---
 
-## 08/06/2026 - Semaine 6 (Admin et MCP)
+## 08/06/2026 - Semaine 3 (Admin et MCP)
 
 ### 🔌 Serveur MCP (Compétences: C1.2, C1.3)
 
@@ -310,7 +316,7 @@
 
 ---
 
-## 05/06/2026 - Semaine 5 (MiniChart et Rôles)
+## 05/06/2026 - Semaine 2 (MiniChart et Rôles)
 
 ### 📊 Visualisation (Compétences: C1.2, C1.3)
 
@@ -332,7 +338,7 @@
 
 ---
 
-## 05/06/2026 - Backend Admin (Compétences: C1.2, C2.3)
+## 05/06/2026 - Semaine 2 - Backend Admin (Compétences: C1.2, C2.3)
 
 ### 🔐 Administration Backend
 - [backend] - Refactor admin.py - Extraction `verify_admin()` pour éviter duplication vérification rôle ADMIN (4 endpoints)
@@ -394,7 +400,7 @@
 
 ---
 
-## 04/06/2026 - Semaine 4 (Conversations et Soft Delete)
+## 04/06/2026 - Semaine 2 (Conversations et Soft Delete)
 
 ### 💬 Conversations Backend (Compétences: C1.2, C2.2)
 
@@ -426,7 +432,7 @@
 
 ---
 
-## 03/06/2026 - Semaine 3 (Composants Chat)
+## 03/06/2026 - Semaine 2 (Composants Chat)
 
 ### 🎨 Composants Chat Frontend (Compétences: C1.2)
 
@@ -465,7 +471,7 @@
 
 ---
 
-## 01/06/2026 - Semaine 1 (Initialisation)
+## 01/06/2026 - Semaine 2 (Initialisation)
 
 ### 🏗️ Infrastructure (Compétences: C1.1, C1.4)
 

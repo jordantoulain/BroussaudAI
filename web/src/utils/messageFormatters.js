@@ -8,10 +8,10 @@
  * Parse la réponse brute de l'API
  * - Gère les réponses string (JSON ou texte brut)
  * - Gère les réponses objet
- * - Ajoute les contexts si présents
+ * - Ajoute les contexts et confidence si présents
  * 
  * @param {Object} responseData - Données brutes de la réponse API
- * @returns {Object} - Objet formaté avec answer, contexts, tags, etc.
+ * @returns {Object} - Objet formaté avec answer, contexts, tags, confidence, etc.
  */
 export function parseAPIResponse(responseData) {
   let rawData = responseData.response || responseData
@@ -31,13 +31,18 @@ export function parseAPIResponse(responseData) {
     rawData.contexts = responseData.contexts
   }
 
+  // Ajouter confidence depuis la racine si présent
+  if (responseData.confidence !== undefined) {
+    rawData.confidence = responseData.confidence
+  }
+
   return rawData
 }
 
 /**
  * Formate un message IA
  * 
- * @param {Object} data - Données du message (answer, label, sub_label, tags, contexts)
+ * @param {Object} data - Données du message (answer, label, sub_label, tags, contexts, confidence)
  * @returns {Object} - Message formaté pour l'affichage
  */
 export function createAIMessage(data) {
@@ -48,6 +53,7 @@ export function createAIMessage(data) {
       sub_label: data.sub_label || 'ACCUEIL',
       tags: data.tags || [],
       contexts: data.contexts || [],
+      confidence: data.confidence !== undefined ? data.confidence : 50,
       file: data.file || [],
       answer: data.answer || data
     },
@@ -121,6 +127,7 @@ export function formatHistoricalMessages(apiMessages) {
       sub_label: msg.sub_label || 'HISTORIQUE',
       tags: msg.tags || [],
       contexts: msg.contexts || [],
+      confidence: msg.confidence !== undefined ? msg.confidence : 50,
       file: msg.file || [],
       answer: msg.response
     },

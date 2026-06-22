@@ -184,6 +184,7 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
     tags = []
     contexts = []
     file_data = None
+    confidence = 50
     final_answer = response_str
 
     try:
@@ -199,6 +200,7 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
         contexts = parsed_json.get("contexts", contexts)
         file_data = parsed_json.get("file", None)
         final_answer = parsed_json.get("answer", response_str)
+        confidence = parsed_json.get("confidence", 50)
     except json.JSONDecodeError:
         pass
 
@@ -215,6 +217,7 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
         "tags": tags,
         "contexts": contexts,
         "response": final_answer,
+        "confidence": confidence,
         "file": file_data
     }
 
@@ -240,6 +243,7 @@ async def rag_route(data: UserPrompt, current_user: dict = Depends(get_current_u
 
     rag_result["conversation_id"] = conv_id
     rag_result["contexts"] = contexts
+    rag_result["confidence"] = confidence
     rag_result["file"] = file_data
     
     return rag_result
