@@ -98,6 +98,7 @@ export function useChat() {
     currentPage,
     setCurrentPage,
     handleSend,
-    messagesEndRef
+    messagesEndRef,
+    scrollToBottom
   }
 }

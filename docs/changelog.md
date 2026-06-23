@@ -5,6 +5,12 @@
 
 ---
 
+## 23/06/2026 - Semaine 5 (Nouvelle Feature)
+
+- [feat] - **Bouton de défilement vers le bas** : Ajout d'un bouton flottant (icône ChevronDown) qui apparaît lorsque l'utilisateur a défilé vers le haut dans une conversation. Permet de redescendre rapidement au dernier message. Modifications : useChat.js (exposition de scrollToBottom), MessageList.jsx (passage du ref de conteneur et callback scroll), page.jsx (gestion de l'état showScrollButton + logique de détection). Style : bouton orange-500, rond, fixe en bas à droite avec z-50 pour éviter le masque gradient, animation hover scale-110.
+
+---
+
 ## 22/06/2026 - Semaine 5 (Nouvelle Feature)
 
 - [feat] - Ajout du niveau de confiance (0-100%) dans les réponses IA, affiché dans l'infobulle de la loupe avec barre de progression colorée (vert/jaune/orange/rouge). Modifications : system_prompt.txt (règle de confiance), ia.py (extraction du champ), messageFormatters.js (gestion du champ), Message.jsx (affichage avec getConfidenceColor).

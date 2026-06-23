@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense, useContext } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense, useContext } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import MessageList from '@/components/chat/MessageList'
 import ChatInput from '@/components/chat/ChatInput'
@@ -8,6 +8,7 @@ import { useChat } from '@/hooks/useChat'
 import { api } from '@/services/api'
 import { ConversationsContext } from './layout'
 import { parseAPIResponse, createAIMessage, createUserMessage, createWelcomeMessage, formatHistoricalMessages } from '@/utils/messageFormatters'
+import { ChevronsDown } from 'lucide-react'
 
 /**
  * Composant interne qui utilise useSearchParams (nécessite Suspense boundary)
@@ -19,12 +20,19 @@ function ChatPageContent({
   isChatLoading, 
   conversationId,
   setConversationId,
-  messagesEndRef
+  messagesEndRef,
+  scrollToBottom
 }) {
   const { fetchConversations, selectConversation } = useContext(ConversationsContext)
   const router = useRouter()
   const searchParams = useSearchParams()
   const conversationIdParam = searchParams.get('conversation_id')
+  
+  // Référence pour le conteneur des messages
+  const messagesContainerRef = useRef(null)
+  
+  // État pour afficher/masquer le bouton de défilement
+  const [showScrollButton, setShowScrollButton] = useState(false)
   
   // Messages combinés (historiques + nouveaux)
   const [messages, setMessages] = useState(chatMessages)
@@ -81,6 +89,20 @@ function ChatPageContent({
     }, 50)
     return () => clearTimeout(timer)
   }, [messages, isLoading, messagesEndRef])
+
+  // Handler pour la détection de scroll
+  const handleScroll = useCallback((container) => {
+    if (!container) return
+    // Afficher le bouton si on n'est pas en bas du conteneur
+    // On vérifie si scrollTop + clientHeight < scrollHeight - 10 (petite marge)
+    const isAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10
+    setShowScrollButton(!isAtBottom)
+  }, [])
+
+  // Masquer le bouton quand de nouveaux messages arrivent
+  useEffect(() => {
+    setShowScrollButton(false)
+  }, [messages])
 
   // Handler pour nouvelle conversation
   const handleNewConversation = useCallback(() => {
@@ -148,7 +170,20 @@ function ChatPageContent({
         messages={messages} 
         isLoading={isLoading || isChatLoading} 
         messagesEndRef={messagesEndRef}
+        messagesContainerRef={messagesContainerRef}
+        onScroll={handleScroll}
       />
+      
+      {/* Bouton pour redescendre en bas */}
+      {showScrollButton && scrollToBottom && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-10 right-4 md:right-10 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-xl cursor-pointer transition-all duration-200 hover:scale-110 z-50"
+          aria-label="Descendre en bas"
+        >
+          <ChevronsDown className="w-5 h-5" />
+        </button>
+      )}
       
       {/* Input */}
       <div className="p-4">
@@ -176,7 +211,8 @@ export default function ChatPage() {
     isLoading: isChatLoading, 
     conversationId,
     setConversationId,
-    messagesEndRef 
+    messagesEndRef,
+    scrollToBottom
   } = useChat()
 
   return (
@@ -189,6 +225,7 @@ export default function ChatPage() {
         conversationId={conversationId}
         setConversationId={setConversationId}
         messagesEndRef={messagesEndRef}
+        scrollToBottom={scrollToBottom}
       />
     </Suspense>
   )
