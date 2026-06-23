@@ -4,7 +4,36 @@ import { useState, useEffect } from 'react'
 import { LogOut, Loader2, Smartphone, Monitor, Clock, Calendar, AlertCircle } from 'lucide-react'
 import SideCanvas from '@/components/ui/SideCanvas'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import { Skeleton } from '@/components/shared'
 import { api } from '@/services/api'
+
+/**
+ * Skeleton pour une session dans la liste
+ * @returns {JSX.Element}
+ */
+function SessionSkeleton() {
+  return (
+    <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg" aria-hidden="true">
+      {/* Infos appareil - skeleton */}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex-shrink-0">
+          <Skeleton className="w-5 h-5 rounded" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-1">
+          <Skeleton className="h-3 w-3/4 rounded" />
+          <Skeleton className="h-2 w-1/2 rounded" />
+        </div>
+      </div>
+
+      {/* Dates et actions - skeleton */}
+      <div className="flex flex-col items-end gap-2 flex-shrink-0 ml-3 w-24">
+        <Skeleton className="h-3 w-20 rounded" />
+        <Skeleton className="h-3 w-16 rounded" />
+        <Skeleton className="h-6 w-12 rounded" />
+      </div>
+    </div>
+  )
+}
 
 /**
  * Formate une date pour l'affichage
@@ -197,11 +226,12 @@ export default function SessionsList({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Chargement */}
-        {loading && !sessions.length ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-neutral-500" />
-            <span className="ml-2 text-neutral-600">Chargement...</span>
+        {/* Chargement - affiche 3 skeletons de session */}
+        {loading ? (
+          <div className="space-y-3">
+            <SessionSkeleton />
+            <SessionSkeleton />
+            <SessionSkeleton />
           </div>
         ) : null}
 
