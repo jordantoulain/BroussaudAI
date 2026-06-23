@@ -1,49 +1,58 @@
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-function decodeJwt(token) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    return null;
-  }
-}
+export async function proxy(request) {
+  // Création d'une réponse modifiable pour que Supabase puisse rafraîchir les cookies si besoin
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  })
 
-export function proxy(request) {
-  const hasAccessToken = request.cookies.has('access_token')
-  const hasRefreshToken = request.cookies.has('refresh_token')
-  const accessToken = request.cookies.get('access_token')?.value
-  const refreshToken = request.cookies.get('refresh_token')?.value
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Récupération de l'utilisateur actif
+  const { data: { user } } = await supabase.auth.getUser()
   
   // Protection /chat
-  if (request.nextUrl.pathname.startsWith('/chat') && !hasAccessToken && !hasRefreshToken) {
+  if (request.nextUrl.pathname.startsWith('/chat') && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
   
   // Protection /admin
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    let payload = null
-    if (accessToken) {
-      payload = decodeJwt(accessToken)
-    } else if (refreshToken) {
-      payload = decodeJwt(refreshToken)
-    }
-    
-    if (!payload) {
+    if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
     
-    const role = payload.role || 'USER'
+    // On va chercher le rôle directement dans ta table publique users
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    const role = dbUser?.role || 'USER'
+    
     if (role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/chat', request.url))
     }
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {

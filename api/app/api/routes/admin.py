@@ -1,18 +1,58 @@
+import os
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import UUID4
-from api.routes.auth import get_current_user, get_password_hash
+from supabase import create_client
+from api.routes.auth import get_current_user
 from core.supabase_client import supabase
 from core.sanitize import sanitize_text, sanitize_dict
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
 
+# Initialisation du client admin (Service Role) pour gérer l'authentification
+# Ce client contourne les règles RLS, à n'utiliser QUE dans les routes sécurisées
+supabase_admin = create_client(
+    os.getenv("SUPABASE_URL", ""),
+    os.getenv("SUPABASE_KEY", "")
+)
 
 def verify_admin(current_user: dict):
-    """Vérifie que l'utilisateur a le rôle ADMIN."""
-    if current_user.get("role") != "ADMIN":
+    """
+    Vérifie que l'utilisateur a le rôle ADMIN en interrogeant directement 
+    la base de données (Source de vérité absolue).
+    """
+    user_id = current_user.get("id")
+    
+    if not user_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accès interdit. Rôle ADMIN requis."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utilisateur non identifié."
+        )
+        
+    try:
+        response = supabase.table("users").select("role").eq("id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Profil utilisateur introuvable en base."
+            )
+            
+        db_role = response.data[0].get("role")
+        
+        if db_role != "ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Accès interdit. Rôle ADMIN requis."
+            )
+            
+        current_user["role"] = db_role
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la vérification des droits : {str(e)}"
         )
 
 
@@ -24,14 +64,12 @@ def get_timeline_data():
         today = datetime.now(timezone.utc).date()
         last_10_days = [(today - timedelta(days=i)).isoformat() for i in range(9, -1, -1)]
         
-        # Récupérer TOUTES les conversations
         conv_resp = supabase.table("conversations") \
             .select("*") \
             .order("created_at", desc=True) \
             .limit(1000) \
             .execute()
         
-        # Récupérer TOUS les messages
         msg_resp = supabase.table("messages") \
             .select("*") \
             .order("created_at", desc=True) \
@@ -41,7 +79,6 @@ def get_timeline_data():
         conversations = conv_resp.data or []
         messages = msg_resp.data or []
         
-        # Fonction pour extraire la date
         def get_date_str(item):
             for field in ["created_at", "date", "createdDate", "created"]:
                 if item.get(field):
@@ -52,7 +89,6 @@ def get_timeline_data():
                         return val
             return None
         
-        # Compter par jour pour les 10 derniers jours
         conv_timeline = []
         msg_timeline = []
         
@@ -77,48 +113,33 @@ def get_timeline_data():
 def get_stats():
     """Récupère les statistiques pour le dashboard admin"""
     try:
-        # Nombre d'utilisateurs
         users_count = supabase.table("users").select("id").execute()
-        
-        # Nombre de conversations
         conversations_count = supabase.table("conversations").select("id").execute()
-        
-        # Nombre de messages
         messages_count = supabase.table("messages").select("id").execute()
-        
-        # Nombre de vecteurs (documents dans vecs.documents_gemini)
         vectors_count = supabase.schema("vecs").table("documents_gemini").select("id").execute()
         
-        # Statistiques IA depuis stats_ia
         from datetime import datetime, timezone, timedelta
         today = datetime.now(timezone.utc).date()
         
-        # Fonction pour exécuter une requête et retourner des données sûres
         def safe_execute(query_builder):
             result = query_builder.execute()
-            if result is None:
-                return type('obj', (object,), {'data': []})()
-            if not hasattr(result, 'data'):
+            if result is None or not hasattr(result, 'data'):
                 return type('obj', (object,), {'data': []})()
             return result
         
-        # Stats pour aujourd'hui
         today_stats = safe_execute(supabase.table("stats_ia") \
             .select("*") \
             .eq("date", today.isoformat()) \
             .maybe_single())
         
-        # Stats pour la semaine (7 derniers jours)
         week_ago = today - timedelta(days=6)
         week_stats = safe_execute(supabase.table("stats_ia") \
             .select("*") \
             .gte("date", week_ago.isoformat()) \
             .order("date"))
         
-        # Stats pour tout le temps
         all_stats = safe_execute(supabase.table("stats_ia").select("*"))
         
-        # Calculer les moyennes et totaux
         def calculate_avg(stats_data, field):
             if not stats_data or not getattr(stats_data, 'data', None):
                 return 0
@@ -130,28 +151,23 @@ def get_stats():
                 return 0
             return sum(s.get(field, 0) for s in stats_data.data if s)
         
-        # Temps moyen de réponse (en ms)
         today_data = getattr(today_stats, 'data', {}) or {}
         avg_response_time_today = today_data.get("avg_response_time_ms", 0)
         avg_response_time_week = calculate_avg(week_stats, "avg_response_time_ms")
         avg_response_time_all = calculate_avg(all_stats, "avg_response_time_ms")
         
-        # Tokens
         total_tokens_today = today_data.get("total_tokens", 0)
         total_tokens_week = calculate_sum(week_stats, "total_tokens")
         total_tokens_all = calculate_sum(all_stats, "total_tokens")
         
-        # Conversations depuis stats_ia
         total_conversations_today = today_data.get("total_conversations", 0)
         total_conversations_week = calculate_sum(week_stats, "total_conversations")
         total_conversations_all = calculate_sum(all_stats, "total_conversations")
         
-        # Messages depuis stats_ia
         total_messages_today = today_data.get("total_messages", 0)
         total_messages_week = calculate_sum(week_stats, "total_messages")
         total_messages_all = calculate_sum(all_stats, "total_messages")
         
-        # Avis
         positive_today = today_data.get("positive_reviews", 0)
         negative_today = today_data.get("negative_reviews", 0)
         positive_week = calculate_sum(week_stats, "positive_reviews")
@@ -159,8 +175,6 @@ def get_stats():
         positive_all = calculate_sum(all_stats, "positive_reviews")
         negative_all = calculate_sum(all_stats, "negative_reviews")
         
-        # Timeline stats_ia pour la semaine (pour les charts)
-        # Extraire les données par jour pour la semaine
         ia_timeline_data = []
         if week_stats and week_stats.data:
             for stat in week_stats.data:
@@ -174,10 +188,8 @@ def get_stats():
                     "negative_reviews": stat.get("negative_reviews", 0)
                 })
         
-        # Si stats_ia est vide, calculer depuis les données existantes
         all_stats_data = getattr(all_stats, 'data', []) or []
         if not all_stats_data or len(all_stats_data) == 0:
-            # Compter les avis positifs/négatifs depuis la table reviews
             reviews_resp = safe_execute(supabase.table("reviews").select("rating"))
             reviews_data = getattr(reviews_resp, 'data', []) or []
             positive_all = sum(1 for r in reviews_data if r and r.get("rating") == True)
@@ -225,10 +237,7 @@ def get_stats():
 
 @router.get("/", response_model=dict)
 def admin_dashboard(current_user: dict = Depends(get_current_user)):
-    """
-    Endpoint du panneau d'administration - retourne les stats et données de timeline
-    Accessible uniquement aux ADMIN
-    """
+    """Endpoint du panneau d'administration - retourne les stats et données de timeline"""
     verify_admin(current_user)
     
     stats_data = get_stats()
@@ -243,9 +252,7 @@ def admin_dashboard(current_user: dict = Depends(get_current_user)):
 
 @router.get("/messages", response_model=dict)
 def list_all_messages(current_user: dict = Depends(get_current_user)):
-    """
-    Liste tous les messages avec métadonnées - accessible uniquement aux ADMIN
-    """
+    """Liste tous les messages avec métadonnées"""
     verify_admin(current_user)
     
     try:
@@ -268,28 +275,55 @@ def list_all_messages(current_user: dict = Depends(get_current_user)):
 
 @router.get("/users", response_model=dict)
 def list_users(current_user: dict = Depends(get_current_user)):
-    """
-    Liste tous les utilisateurs - accessible uniquement aux ADMIN
-    """
     verify_admin(current_user)
     
     try:
-        # Inclure mfa_secret et is_active pour savoir si 2FA est configure et si compte est actif
+        # 1. Récupération des profils publics
         response = supabase.table("users") \
-            .select("id, nom, prenom, mail, role, created_at, last_login_at, mfa_secret, is_active, deleted_at") \
+            .select("id, nom, prenom, mail, role, created_at, last_login_at, is_active, deleted_at") \
             .execute()
         
         users = response.data or []
         
-        # Masquer la valeur de mfa_secret si elle existe
+        # 2. Enrichissement avec l'état réel du 2FA
         for user in users:
-            if user.get("mfa_secret") is not None:
-                user["mfa_secret"] = "*****"
+            try:
+                mfa_response = supabase_admin.auth.admin.mfa.list_factors({"user_id": user["id"]})
+                
+                # Testons si mfa_response est directement la liste
+                # Si c'est un objet du SDK qui contient 'factors', on le prend
+                if hasattr(mfa_response, 'factors'):
+                    factors = mfa_response.factors
+                # Si mfa_response est une liste (ou ressemble à une liste)
+                elif isinstance(mfa_response, list):
+                    factors = mfa_response
+                # Si c'est un dict
+                elif isinstance(mfa_response, dict):
+                    factors = mfa_response.get('factors', [])
+                else:
+                    factors = []
+
+                print(f"DEBUG - Factors finaux: {factors}")
+                
+                has_2fa = False
+                for f in factors:
+                    # Ici f est soit un objet Factor, soit un dict
+                    f_type = getattr(f, 'factor_type', None) if not isinstance(f, dict) else f.get('factor_type')
+                    f_status = getattr(f, 'status', None) if not isinstance(f, dict) else f.get('status')
+                    
+                    print(f)
+                    print(f_type, f_status)
+
+                    if f_type == 'totp' and f_status == 'verified':
+                        has_2fa = True
+                        break
+                
+                user["has_mfa"] = has_2fa
+            except Exception as e:
+                print(f"Erreur MFA {user['id']}: {str(e)}")
+                user["has_mfa"] = False
         
-        return {
-            "users": users,
-            "count": len(users)
-        }
+        return {"users": users, "count": len(users)}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -299,17 +333,11 @@ def list_users(current_user: dict = Depends(get_current_user)):
 
 @router.post("/users", status_code=status.HTTP_201_CREATED)
 def create_user(user_data: dict, current_user: dict = Depends(get_current_user)):
-    """
-    Crée un nouvel utilisateur - accessible uniquement aux ADMIN
-    """
+    """Crée un nouvel utilisateur (Via Supabase Admin)"""
     verify_admin(current_user)
     
     try:
-        # Vérifier si l'email existe déjà
-        existing_user = supabase.table("users") \
-            .select("id") \
-            .eq("mail", user_data.get("mail")) \
-            .execute()
+        existing_user = supabase.table("users").select("id").eq("mail", user_data.get("mail")).execute()
         
         if existing_user.data:
             raise HTTPException(
@@ -317,34 +345,26 @@ def create_user(user_data: dict, current_user: dict = Depends(get_current_user))
                 detail="Cet email est déjà utilisé."
             )
         
-        # Hash du mot de passe
-        hashed_password = get_password_hash(user_data.get("mdp", ""))
-        
-        # Sanitize user input
         sanitized_data = sanitize_dict(user_data)
         
-        # Créer le nouvel utilisateur
-        new_user = {
-            "nom": sanitized_data.get("nom"),
-            "prenom": sanitized_data.get("prenom"),
-            "mail": sanitized_data.get("mail"),
-            "mdp": hashed_password,
-            "role": sanitized_data.get("role", "USER")
-        }
+        # 1. Créer l'utilisateur avec les droits Admin
+        auth_res = supabase_admin.auth.admin.create_user({
+            "email": sanitized_data.get("mail"),
+            "password": user_data.get("mdp", "ChangeMe123!"),
+            "email_confirm": True,
+            "user_metadata": {
+                "nom": sanitized_data.get("nom"),
+                "prenom": sanitized_data.get("prenom")
+            }
+        })
         
-        response = supabase.table("users") \
-            .insert(new_user) \
-            .execute()
-        
-        created_user = response.data[0] if response.data else None
-        
-        # Ne pas retourner le mot de passe hashé
-        if created_user:
-            created_user.pop("mdp", None)
+        # 2. L'insertion dans public.users sera probablement gérée par ton Trigger SQL.
+        # Si tu n'as pas de trigger, décommente la ligne ci-dessous :
+        # supabase.table("users").insert({...}).execute()
         
         return {
             "message": "Utilisateur créé avec succès",
-            "user": created_user
+            "user_id": auth_res.user.id
         }
     except Exception as e:
         raise HTTPException(
@@ -355,29 +375,13 @@ def create_user(user_data: dict, current_user: dict = Depends(get_current_user))
 
 @router.put("/users/{user_id}", response_model=dict)
 def update_user(user_id: str, user_data: dict, current_user: dict = Depends(get_current_user)):
-    """
-    Met à jour un utilisateur - accessible uniquement aux ADMIN
-    """
+    """Met à jour un utilisateur"""
     verify_admin(current_user)
     
     try:
-        # Vérifier que l'utilisateur existe
-        existing_user = supabase.table("users") \
-            .select("id") \
-            .eq("id", user_id) \
-            .execute()
-        
-        if not existing_user.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Utilisateur non trouvé"
-            )
-        
-        # Sanitize user input
         sanitized_data = sanitize_dict(user_data)
-        
-        # Préparer les données de mise à jour
         update_data = {}
+        auth_update_data = {}
         
         if "nom" in sanitized_data:
             update_data["nom"] = sanitized_data["nom"]
@@ -385,22 +389,23 @@ def update_user(user_id: str, user_data: dict, current_user: dict = Depends(get_
             update_data["prenom"] = sanitized_data["prenom"]
         if "mail" in sanitized_data:
             update_data["mail"] = sanitized_data["mail"]
+            auth_update_data["email"] = sanitized_data["mail"]
         if "role" in sanitized_data:
             update_data["role"] = sanitized_data["role"]
+            
         if "mdp" in user_data and user_data["mdp"]:
-            update_data["mdp"] = get_password_hash(user_data["mdp"])
+            auth_update_data["password"] = user_data["mdp"]
         
-        # Mettre à jour l'utilisateur
-        response = supabase.table("users") \
-            .update(update_data) \
-            .eq("id", user_id) \
-            .execute()
+        # Mise à jour des identifiants (Mot de passe / Email) via Admin API
+        if auth_update_data:
+            supabase_admin.auth.admin.update_user_by_id(user_id, auth_update_data)
         
-        updated_user = response.data[0] if response.data else None
-        
-        # Ne pas retourner le mot de passe hashé
-        if updated_user:
-            updated_user.pop("mdp", None)
+        # Mise à jour du profil public
+        if update_data:
+            response = supabase.table("users").update(update_data).eq("id", user_id).execute()
+            updated_user = response.data[0] if response.data else None
+        else:
+            updated_user = None
         
         return {
             "message": "Utilisateur mis à jour avec succès",
@@ -416,82 +421,66 @@ def update_user(user_id: str, user_data: dict, current_user: dict = Depends(get_
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: UUID4, current_user: dict = Depends(get_current_user)):
     """
-    Supprime un utilisateur (soft delete) - accessible uniquement aux ADMIN
+    Désactive un utilisateur (Soft Delete) - accessible uniquement aux ADMIN.
+    L'utilisateur est suspendu de l'authentification mais ses données sont conservées.
     """
     verify_admin(current_user)
     
     try:
-        # Vérifier que l'utilisateur existe
-        existing_user = supabase.table("users") \
-            .select("id") \
-            .eq("id", user_id) \
-            .execute()
-        
-        if not existing_user.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Utilisateur non trouvé"
-            )
-        
-        # Soft delete: marquer comme inactif au lieu de supprimer
+        user_id_str = str(user_id)
         from datetime import datetime, timezone
+        
+        # 1. On suspend l'accès Auth au lieu de le détruire (Banni pour 100 ans)
+        supabase_admin.auth.admin.update_user_by_id(
+            user_id_str, 
+            {"ban_duration": "876000h"}
+        )
+        
+        # 2. On flagge le profil public comme désactivé
         supabase.table("users") \
             .update({
                 "is_active": False,
                 "deleted_at": datetime.now(timezone.utc).isoformat(),
                 "deleted_by": current_user["id"]
             }) \
-            .eq("id", user_id) \
+            .eq("id", user_id_str) \
             .execute()
         
-        return {"message": "Utilisateur marqué comme supprimé avec succès"}
+        return {"message": "Compte utilisateur suspendu avec succès"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la suppression de l'utilisateur: {str(e)}"
+            detail=f"Erreur lors de la suspension de l'utilisateur: {str(e)}"
         )
 
 
 @router.post("/users/{user_id}/restore", status_code=status.HTTP_200_OK)
 def restore_user(user_id: UUID4, current_user: dict = Depends(get_current_user)):
     """
-    Restaure un utilisateur soft-deleted - accessible uniquement aux ADMIN
+    Restaure un utilisateur soft-deleted - accessible uniquement aux ADMIN.
     """
     verify_admin(current_user)
     
     try:
-        # Vérifier que l'utilisateur existe
-        existing_user = supabase.table("users") \
-            .select("id, is_active") \
-            .eq("id", user_id) \
-            .execute()
+        user_id_str = str(user_id)
         
-        if not existing_user.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Utilisateur non trouvé"
-            )
+        # 1. On retire la suspension dans Supabase Auth
+        supabase_admin.auth.admin.update_user_by_id(
+            user_id_str, 
+            {"ban_duration": "none"}
+        )
         
-        db_user = existing_user.data[0]
-        
-        # Vérifier que l'utilisateur est bien désactivé
-        if db_user.get("is_active") == True:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="L'utilisateur est déjà actif"
-            )
-        
-        # Restaurer l'utilisateur
+        # 2. On réactive le profil public
         supabase.table("users") \
             .update({
                 "is_active": True,
                 "deleted_at": None,
                 "deleted_by": None
             }) \
-            .eq("id", user_id) \
+            .eq("id", user_id_str) \
             .execute()
         
-        return {"message": "Utilisateur restauré avec succès"}
+        return {"message": "Utilisateur restauré et accès réactivé avec succès"}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -500,55 +489,72 @@ def restore_user(user_id: UUID4, current_user: dict = Depends(get_current_user))
 
 
 @router.post("/users/{user_id}/reset-mfa", status_code=status.HTTP_200_OK)
+@router.delete("/membres/{user_id}/mfa", status_code=status.HTTP_200_OK) # Support de l'ancienne et nouvelle URL
 def reset_user_mfa(user_id: UUID4, current_user: dict = Depends(get_current_user)):
     """
-    Réinitialise le 2FA d'un utilisateur - accessible uniquement aux ADMIN
+    Détruit physiquement tous les facteurs TOTP (2FA) configurés pour cet utilisateur.
     """
     verify_admin(current_user)
     
     try:
-        # Vérifier que l'utilisateur existe
-        existing_user = supabase.table("users") \
-            .select("id") \
-            .eq("id", user_id) \
-            .execute()
+        user_id_str = str(user_id)
         
-        if not existing_user.data:
+        # 1. Récupération des facteurs d'authentification
+        # Utilisons une approche qui accepte l'objet, la liste, ou le dictionnaire
+        mfa_response = supabase_admin.auth.admin.mfa.list_factors({"user_id": user_id_str})
+        
+        # Log pour debug si besoin, mais surtout pour normaliser 'factors'
+        factors = []
+        if hasattr(mfa_response, 'factors'):
+            factors = mfa_response.factors
+        elif isinstance(mfa_response, list):
+            factors = mfa_response
+        elif isinstance(mfa_response, dict):
+            factors = mfa_response.get('factors', [])
+            
+        deleted = False
+        
+        # 2. Suppression de tout facteur de type TOTP
+        for f in factors:
+            # Extraction polyvalente (Objet ou Dictionnaire)
+            f_type = getattr(f, 'factor_type', None) if not isinstance(f, dict) else f.get('factor_type')
+            f_id = getattr(f, 'id', None) if not isinstance(f, dict) else f.get('id')
+            
+            if f_type == "totp":
+                supabase_admin.auth.admin.mfa.delete_factor({
+                    "user_id": user_id_str,
+                    "id": f_id
+                })
+                deleted = True
+                
+        if not deleted:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Utilisateur non trouvé"
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail="Aucun facteur TOTP trouvé pour ce membre."
             )
+            
+        return {"message": "2FA désactivé avec succès."}
         
-        # Réinitialiser le secret 2FA
-        supabase.table("users") \
-            .update({"mfa_secret": None}) \
-            .eq("id", user_id) \
-            .execute()
-        
-        return {"message": "2FA réinitialisé avec succès"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la réinitialisation du 2FA: {str(e)}"
+            detail=f"Erreur serveur lors du reset 2FA: {str(e)}"
         )
 
 
 @router.get("/conversations", response_model=dict)
 def list_all_conversations(current_user: dict = Depends(get_current_user)):
-    """
-    Liste TOUTES les conversations (tous utilisateurs) - accessible uniquement aux ADMIN
-    """
     verify_admin(current_user)
     
     try:
-        # Récupérer toutes les conversations (y compris inactives) avec le mail de l'utilisateur
         response = supabase.table("conversations") \
             .select("id, user_id, title, is_active, created_at, users:user_id(mail)") \
             .order("created_at", desc=True) \
             .execute()
         
         conversations = response.data or []
-        # Extraire le mail de l'objet users
         for conv in conversations:
             if conv.get("users"):
                 conv["user_mail"] = conv["users"].get("mail")
@@ -559,66 +565,45 @@ def list_all_conversations(current_user: dict = Depends(get_current_user)):
             "count": len(conversations)
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la récupération des conversations: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/conversations/{conversation_id}", response_model=dict)
 def get_conversation_admin(conversation_id: UUID4, current_user: dict = Depends(get_current_user)):
-    """
-    Récupère une conversation spécifique avec ses messages - accessible uniquement aux ADMIN
-    """
     verify_admin(current_user)
     
     try:
-        # Vérifier que la conversation existe
         conv_response = supabase.table("conversations") \
             .select("id, user_id, title, is_active, created_at, users:user_id(mail)") \
-            .eq("id", conversation_id) \
+            .eq("id", str(conversation_id)) \
             .execute()
         
         if not conv_response.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Conversation non trouvée"
-            )
+            raise HTTPException(status_code=404, detail="Conversation non trouvée")
         
         conversation = conv_response.data[0]
-        # Extraire le mail de l'objet users
         if conversation.get("users"):
             conversation["user_mail"] = conversation["users"].get("mail")
         del conversation["users"]
         
-        # Récupérer les messages
         messages_response = supabase.table("messages") \
             .select("*") \
-            .eq("conversation_id", conversation_id) \
+            .eq("conversation_id", str(conversation_id)) \
             .order("created_at", desc=False) \
             .execute()
         
-        messages = messages_response.data or []
-        
         return {
             "conversation": conversation,
-            "messages": messages
+            "messages": messages_response.data or []
         }
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors du chargement de la conversation: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/documents", response_model=dict)
 def list_documents(current_user: dict = Depends(get_current_user)):
-    """
-    Liste tous les documents (vecs.documents_gemini) - accessible uniquement aux ADMIN
-    Regroupe par filename car un PDF peut avoir plusieurs lignes (chunks)
-    """
     verify_admin(current_user)
     
     try:
@@ -627,8 +612,6 @@ def list_documents(current_user: dict = Depends(get_current_user)):
             .execute()
         
         documents = response.data or []
-        
-        # Regrouper par filename
         grouped_docs = {}
         for doc in documents:
             metadata = doc.get("metadata", {})
@@ -646,122 +629,81 @@ def list_documents(current_user: dict = Depends(get_current_user)):
                 grouped_docs[filename]["chunk_count"] += 1
                 grouped_docs[filename]["ids"].append(doc["id"])
         
-        # Convertir en liste
-        documents_list = [
-            {
-                "filename": data["filename"],
-                "mimetype": data["mimetype"],
-                "chunk_count": data["chunk_count"],
-                "ids": data["ids"]
-            }
-            for data in grouped_docs.values()
-        ]
+        documents_list = list(grouped_docs.values())
         
         return {
             "documents": documents_list,
             "count": len(documents_list)
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la récupération des documents: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/documents/{filename}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_document(filename: str, current_user: dict = Depends(get_current_user)):
-    """
-    Supprime TOUTES les lignes correspondant à un fichier (par filename dans metadata) - accessible uniquement aux ADMIN
-    Un PDF peut avoir plusieurs chunks, donc on supprime tout ce qui a ce filename
-    """
     verify_admin(current_user)
     
     try:
-        # Supprimer toutes les lignes avec ce filename dans metadata
         result = supabase.schema("vecs").table("documents_gemini") \
             .delete() \
             .eq("metadata->>filename", filename) \
             .execute()
         
         if not result.data and result.count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Aucun document trouvé avec le nom '{filename}'"
-            )
+            raise HTTPException(status_code=404, detail="Aucun document trouvé")
         
-        return {"message": f"Document '{filename}' et ses chunks supprimés avec succès"}
+        return {"message": "Document supprimé avec succès"}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la suppression du document: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-# ==================== Reviews (Avis) ====================
 
 @router.get("/reviews")
 def get_all_reviews(current_user: dict = Depends(get_current_user)):
-    """
-    Récupère tous les avis - accessible uniquement aux ADMIN
-    """
     verify_admin(current_user)
     
     try:
-        # Récupérer tous les avis avec les informations utilisateur et message
         response = supabase.table("reviews") \
             .select("id, user_id, message_id, rating, description, created_at") \
             .order("created_at", desc=True) \
             .execute()
         
         reviews = response.data or []
-        
-        # Récupérer les messages correspondants pour obtenir le contenu et conversation_id
         message_ids = [review["message_id"] for review in reviews]
+        
         messages_response = supabase.table("messages") \
             .select("id, conversation_id, question, response") \
             .in_("id", message_ids) \
             .execute()
-        
         messages_map = {msg["id"]: msg for msg in (messages_response.data or [])}
         
-        # Récupérer les informations des utilisateurs pour chaque avis
         user_ids = [review["user_id"] for review in reviews]
         users_response = supabase.table("users") \
             .select("id, nom, prenom, mail, role") \
             .in_("id", user_ids) \
             .execute()
-        
         users_map = {user["id"]: user for user in (users_response.data or [])}
         
-        # Ajouter les infos utilisateur et message à chaque avis
         enriched_reviews = []
         for review in reviews:
             user_info = users_map.get(review["user_id"])
             message_info = messages_map.get(review["message_id"])
             
-            # Extraire le contenu du message (question pour user, response pour IA)
             message_content = message_info["response"] if message_info and message_info.get("response") else (
                 message_info["question"] if message_info and message_info.get("question") else "Contenu non disponible"
             )
             
-            enriched_review = {
+            enriched_reviews.append({
                 **review,
                 "user_nom": user_info["nom"] if user_info else None,
                 "user_prenom": user_info["prenom"] if user_info else None,
                 "user_mail": user_info["mail"] if user_info else None,
                 "user_role": user_info["role"] if user_info else None,
                 "conversation_id": message_info["conversation_id"] if message_info else None,
-                "message_content": message_content  # Message complet sans limite
-            }
-            enriched_reviews.append(enriched_review)
+                "message_content": message_content
+            })
         
         return {"reviews": enriched_reviews, "count": len(enriched_reviews)}
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la récupération des avis: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))

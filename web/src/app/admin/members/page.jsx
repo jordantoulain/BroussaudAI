@@ -333,11 +333,11 @@ export default function AdminMembersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-sm flex ${
-                        user.mfa_secret 
+                        user.has_mfa
                           ? 'bg-green-500 text-white' 
                           : 'bg-neutral-200 text-neutral-800'
                       }`}>
-                        {user.mfa_secret ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                        {user.has_mfa ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -355,9 +355,9 @@ export default function AdminMembersPage() {
                             setUserToResetMfa(user)
                             setShowResetMfaModal(true)
                           }}
-                          disabled={!user.mfa_secret || isDeleted}
+                          disabled={!user.has_mfa || isDeleted}
                           className={`p-2 rounded-lg transition-colors ${
-                            user.mfa_secret && !isDeleted
+                            user.has_mfa && !isDeleted
                               ? 'text-neutral-600 cursor-pointer hover:text-amber-500' 
                               : 'text-neutral-400 cursor-not-allowed opacity-50'
                           }`}

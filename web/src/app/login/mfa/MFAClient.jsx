@@ -5,9 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { AuthCard, FormButton, OTPInput } from '@/components/auth'
 import { Logo, ErrorAlert } from '@/components/shared'
 import LoadingIndicator2 from '@/components/chat/LoadingIndicator2'
-import { verifyMFAAction, skipMFAAction } from '@/app/actions/auth'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+import { verifyMFAAction, skipMFAAction, getMFAEnrollmentAction } from '@/app/actions/auth'
 
 export default function MFAClient() {
   const searchParams = useSearchParams()
@@ -26,7 +24,6 @@ export default function MFAClient() {
 
   useEffect(() => {
     const userIdParam = searchParams.get('user_id')
-    const mode = searchParams.get('mode') // 'setup' or 'verify'
     const hasMFAParam = searchParams.get('has_mfa') === 'true'
     const mfaVerified = searchParams.get('mfa_verified') === 'true'
 
@@ -38,8 +35,6 @@ export default function MFAClient() {
     setUserId(userIdParam)
     setHasMFA(hasMFAParam)
     
-    // If user has MFA but not verified, go to verification mode
-    // If user has no MFA, go to setup mode
     if (hasMFAParam && !mfaVerified) {
       setVerificationMode(true)
       setSetupMode(false)
@@ -48,37 +43,26 @@ export default function MFAClient() {
       setSetupMode(true)
       setVerificationMode(false)
       setShowSkip(true)
-      // Enroll for MFA - only once
       if (!enrollCalled.current) {
         enrollCalled.current = true
-        enrollMFA(userIdParam)
+        enrollMFA()
       }
     } else {
-      // Already verified, shouldn't be here
       router.push('/chat')
     }
 
     setLoading(false)
   }, [searchParams, router])
 
-  const enrollMFA = async (userId) => {
+  const enrollMFA = async () => {
     try {
-      const response = await fetch(`${API_URL}/mfa/enroll`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || "Erreur lors de l'inscription MFA")
-      }
-
-      const data = await response.json()
+      const data = await getMFAEnrollmentAction()
+      if (data.error) throw new Error(data.error)
+      
       setQrCode(data.qr_code)
       setSecret(data.secret)
     } catch (error) {
-      setError(error.message || "Erreur réseau")
+      setError(error.message || "Erreur lors de l'inscription MFA")
     }
   }
 
@@ -92,12 +76,8 @@ export default function MFAClient() {
     setError(null)
 
     const formData = new FormData()
-    formData.append('user_id', userId)
     formData.append('code', code)
     formData.append('userAgent', window.navigator.userAgent)
-    if (setupMode) {
-      formData.append('secret', secret)
-    }
 
     const result = await verifyMFAAction(formData)
     if (result?.error) {
@@ -109,12 +89,7 @@ export default function MFAClient() {
   const handleSkip = async () => {
     setLoading(true)
     setError(null)
-
-    const formData = new FormData()
-    formData.append('user_id', userId)
-    formData.append('userAgent', window.navigator.userAgent)
-
-    const result = await skipMFAAction(formData)
+    const result = await skipMFAAction()
     if (result?.error) {
       setError(result.error)
       setLoading(false)
@@ -139,20 +114,20 @@ export default function MFAClient() {
       <ErrorAlert error={error} />
       
       {setupMode && (
-        <div className="text-center">
+        <div className="text-center flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold text-neutral-800 mb-2">
             Configurer l'authentification à deux facteurs
           </h2>
           <p className="text-sm text-neutral-500 mb-6">
-            Scannez ce code QR avec votre application d'authentification (Google Authenticator, Authy, etc.)
+            Scannez ce code QR avec votre application d'authentification
           </p>
           
           {qrCode && (
-            <div className="mb-4 flex justify-center">
+            <div className="mb-4 w-fit flex justify-center rounded-2xl p-2 bg-white">
               <img 
-                src={`data:image/png;base64,${qrCode}`} 
+                src={qrCode} 
                 alt="Code QR TOTP"
-                className="w-32 h-32 rounded-md"
+                className="w-32 h-32"
               />
             </div>
           )}
@@ -162,10 +137,6 @@ export default function MFAClient() {
               <p>Clé secrète: {secret}</p>
             </div>
           )}
-          
-          <p className="text-sm text-neutral-500 mb-6">
-            Entrez le code à 6 chiffres généré par votre application
-          </p>
           
           <OTPInput value={code} onChange={setCode} disabled={loading} />
           
@@ -196,7 +167,7 @@ export default function MFAClient() {
             Vérification à deux facteurs
           </h2>
           <p className="text-sm text-neutral-500 mb-6">
-            Entrez le code à 6 chiffres de votre application d'authentification
+            Entrez le code à 6 chiffres de votre application
           </p>
           
           <OTPInput value={code} onChange={setCode} disabled={loading} />

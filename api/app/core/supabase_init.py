@@ -8,11 +8,10 @@ def init_db():
             with conn.cursor() as cur:
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS users (
-                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        id UUID PRIMARY KEY,
                         nom VARCHAR(255) NOT NULL,
                         prenom VARCHAR(255) NOT NULL,
                         mail VARCHAR(255) UNIQUE NOT NULL,
-                        mdp TEXT NOT NULL,
                         role VARCHAR(50) DEFAULT 'USER',
                         mfa_secret TEXT,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

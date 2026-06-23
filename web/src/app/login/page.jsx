@@ -7,8 +7,7 @@ import { Logo, ErrorAlert } from '@/components/shared'
 
 /**
  * Page de connexion utilisateur
- * 
- * @returns {JSX.Element}
+ * * @returns {JSX.Element}
  */
 export default function LoginPage() {
   const [error, setError] = useState(null)
@@ -18,6 +17,8 @@ export default function LoginPage() {
     // Ajouter le userAgent au formData
     formData.append('userAgent', window.navigator.userAgent)
     const result = await loginAction(formData)
+    
+    // S'il y a une erreur, on l'affiche. Sinon, le Server Action s'occupe du redirect()
     if (result?.error) {
       setError(result.error)
     }
