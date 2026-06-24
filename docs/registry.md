@@ -26,7 +26,7 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | Chemin | Description | Utilisation | Compétences | Complexité |
 |--------|-------------|-------------|-------------|------------|
 | `core/supabase_client.py` | Client Supabase configuré et réutilisable | `from core.supabase_client import supabase` | C1.2, C1.3 | ⭐⭐ |
-| `core/supabase_init.py` | Initialisation des tables DB (users, conversations, messages, sessions, reviews, stats_ia, mfa_secrets) | Appelé au startup de l'application | C1.2, C1.3 | ⭐⭐⭐ |
+| `core/supabase_init.py` | Initialisation des tables DB (users, conversations, messages, sessions, reviews, stats_ia, mfa_secrets, **config**) | Appelé au startup de l'application | C1.2, C1.3 | ⭐⭐⭐ |
 | `core/llm.py` | Configuration des modèles LLM et embeddings | Importé au démarrage | C1.2, C1.3 | ⭐⭐ |
 | `core/database.py` | Gestion centralisée des connexions MariaDB | Pooling de connexions | C1.2, C1.4 | ⭐⭐⭐ |
 | `core/crypto_utils.py` | Fonctions cryptographiques (chiffrement Fernet pour MFA) | Sécurité des secrets | C2.2, C2.3 | ⭐⭐⭐ |

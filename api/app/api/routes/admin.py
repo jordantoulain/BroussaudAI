@@ -707,3 +707,76 @@ def get_all_reviews(current_user: dict = Depends(get_current_user)):
         return {"reviews": enriched_reviews, "count": len(enriched_reviews)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# System Prompt Configuration Endpoints
+
+@router.get("/config/system-prompt")
+def get_system_prompt(current_user: dict = Depends(get_current_user)):
+    """Récupère le system prompt actuel depuis la base de données"""
+    verify_admin(current_user)
+    
+    try:
+        response = supabase.table("config") \
+            .select("value") \
+            .eq("key", "system_prompt") \
+            .maybe_single() \
+            .execute()
+        
+        # Gestion sécurisée de la réponse
+        if response and hasattr(response, 'data') and response.data and response.data.get("value"):
+            return {"system_prompt": response.data["value"]}
+        else:
+            # Retourner le prompt par défaut si non configuré en DB
+            return {"system_prompt": ""}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la récupération du system prompt: {str(e)}"
+        )
+
+
+@router.post("/config/system-prompt", status_code=status.HTTP_200_OK)
+def update_system_prompt(system_prompt: dict, current_user: dict = Depends(get_current_user)):
+    """Met à jour le system prompt dans la base de données"""
+    verify_admin(current_user)
+    
+    try:
+        prompt_value = system_prompt.get("system_prompt", "")
+        
+        # Vérifier si une entrée existe déjà
+        existing_response = supabase.table("config") \
+            .select("id") \
+            .eq("key", "system_prompt") \
+            .maybe_single() \
+            .execute()
+        
+        # Gestion sécurisée : vérifier que response existe et a un attribut data
+        if existing_response and hasattr(existing_response, 'data') and existing_response.data:
+            # Mettre à jour l'entrée existante (sans updated_at pour éviter les problèmes SQL)
+            # updated_at sera géré par un trigger ou gardera sa valeur précédente
+            supabase.table("config") \
+                .update({"value": prompt_value}) \
+                .eq("key", "system_prompt") \
+                .execute()
+            
+            return {"message": "System prompt mis à jour avec succès", "system_prompt": prompt_value}
+        else:
+            # Créer une nouvelle entrée
+            insert_response = supabase.table("config") \
+                .insert({
+                    "key": "system_prompt",
+                    "value": prompt_value
+                }) \
+                .execute()
+            
+            # Retourner le succès même si insert_response.data est None
+            return {"message": "System prompt créé avec succès", "system_prompt": prompt_value}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la mise à jour du system prompt: {str(e)}"
+        )

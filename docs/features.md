@@ -97,6 +97,7 @@ Ce document présente l'ensemble des **fonctionnalités implémentées** dans le
 | **Liste des conversations** | Vue de toutes les conversations avec filtres (label, sub_label, tag). Recherche globale. | `web/src/app/admin/conversations/page.jsx` | `AdminNavigation.jsx`, recherche + filtres | C1.2 | ⭐⭐⭐ | Filtrage et recherche |
 | **Détail des conversations** | Affichage complet des conversations avec user_mail et messages. Vue admin spécialisée. | `web/src/app/admin/conversations/[id]/page.jsx` | `MessageList.jsx` (isAdminView=true, userEmail) | C1.2 | ⭐⭐⭐ | Visualisation des données |
 | **Audit de sécurité** | Correction de 10+ vulnérabilités identifiées. Protection contre XSS, Brute Force, etc. | `api/app/...` (multiples fichiers) | Security headers, rate limiting, validation | C2.1, C2.2, C2.3 | ⭐⭐⭐⭐ | Sécurité avancée |
+| **Gestion System Prompt** | Configuration dynamique du prompt système de l'agent IA via interface admin. Table config (clé/valeur) + endpoints API + intégration dans le service RAG avec fallback fichier. | `api/app/core/supabase_init.py`, `api/app/api/routes/admin.py`, `api/app/services/rag_service.py`, `web/src/app/admin/system-prompt/page.jsx`, `web/src/components/admin/AdminNavigation.jsx` | `GET/POST /admin/config/system-prompt`, `supabase.table("config")`, fallback vers fichier | C1.2, C1.3, C2.2 | ⭐⭐⭐ | Configuration centralisée, gestion dynamique |
 
 ---
 

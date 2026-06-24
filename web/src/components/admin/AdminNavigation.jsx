@@ -36,6 +36,11 @@ export default function AdminNavigation() {
       label: 'Documents', 
       href: '/admin/documents',
       match: (path) => path.startsWith('/admin/documents')
+    },
+    { 
+      label: 'System Prompt', 
+      href: '/admin/system-prompt',
+      match: (path) => path.startsWith('/admin/system-prompt')
     }
   ]
 

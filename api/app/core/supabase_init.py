@@ -84,6 +84,16 @@ def init_db():
                         UNIQUE(date)
                     );
                 """)
+
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS config (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        key VARCHAR(255) NOT NULL UNIQUE,
+                        value TEXT,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+
             conn.commit()
     except Exception as e:
         return

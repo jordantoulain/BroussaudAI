@@ -31,11 +31,31 @@ class RAGAgentService:
         Args:
             config: RAG configuration. Uses environment variables if not provided.
         """
+        from core.supabase_client import supabase
+        
         self.config = config or RAGConfig.from_env()
         self.prompt_manager = PromptManager(self.config.prompts_dir)
 
         self.qa_prompt = self.prompt_manager.get_prompt_template("qa_prompt")
-        self.system_prompt_str = self.prompt_manager.load_prompt("system_prompt")
+        
+        # Récupérer le system prompt depuis la base de données
+        try:
+            response = supabase.table("config") \
+                .select("value") \
+                .eq("key", "system_prompt") \
+                .maybe_single() \
+                .execute()
+            
+            # Gestion sécurisée de la réponse
+            if response and hasattr(response, 'data') and response.data and response.data.get("value"):
+                self.system_prompt_str = response.data["value"]
+            else:
+                # Fallback vers le fichier si non configuré en DB
+                self.system_prompt_str = self.prompt_manager.load_prompt("system_prompt")
+        except Exception as e:
+            # En cas d'erreur, utiliser le fichier comme fallback
+            print(f"Attention: Impossible de récupérer le system prompt depuis la DB: {e}")
+            self.system_prompt_str = self.prompt_manager.load_prompt("system_prompt")
         
         self.vector_store = SupabaseVectorStore(
             postgres_connection_string=os.environ.get("SUPABASE_CONNECTION_STRING"),

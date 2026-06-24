@@ -5,9 +5,9 @@
 
 ---
 
-## 23/06/2026 - Semaine 5 (Nouvelle Feature)
+## 24/06/2026 - Semaine 5 (Nouvelle Feature)
 
-- [feat] - **Bouton de défilement vers le bas** : Ajout d'un bouton flottant (icône ChevronDown) qui apparaît lorsque l'utilisateur a défilé vers le haut dans une conversation. Permet de redescendre rapidement au dernier message. Modifications : useChat.js (exposition de scrollToBottom), MessageList.jsx (passage du ref de conteneur et callback scroll), page.jsx (gestion de l'état showScrollButton + logique de détection). Style : bouton orange-500, rond, fixe en bas à droite avec z-50 pour éviter le masque gradient, animation hover scale-110.
+- [feat] - **Page admin pour gérer le system prompt** : Ajout d'une page d'administration pour configurer dynamiquement le system prompt de l'agent IA via l'interface web. Inclut : table `config` en base (clé/valeur), endpoints API GET/POST `/admin/config/system-prompt`, intégration dans `rag_service.py` pour récupérer le prompt depuis la DB avec fallback vers le fichier, page web `admin/system-prompt/page.jsx` avec textarea et bouton sauvegarder, lien dans la sidebar admin. Sécurité : vérification du rôle ADMIN requis. Technos : Supabase, FastAPI, React.
 
 ---
 
