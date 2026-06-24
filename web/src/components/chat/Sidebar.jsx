@@ -21,6 +21,7 @@ import { PanelLeftClose, Archive } from 'lucide-react'
  * @param {function} props.onSelectConversation - Callback pour sélectionner une conversation
  * @param {function} props.onDeleteConversation - Callback pour supprimer une conversation
  * @param {function} props.onTogglePin - Callback pour épingler/désépingler une conversation
+ * @param {function} props.onRenameConversation - Callback pour renommer une conversation
  * @param {boolean} props.isMobile - Indique si l'affichage est mobile
  * @param {boolean} props.isCollapsed - Indique si la sidebar est réduite
  * @param {function} props.onToggle - Callback pour basculer l'affichage
@@ -37,6 +38,7 @@ export default function Sidebar({
   onSelectConversation,
   onDeleteConversation,
   onTogglePin,
+  onRenameConversation,
   isMobile,
   isCollapsed,
   onToggle,
@@ -102,6 +104,7 @@ export default function Sidebar({
                 onSelectConversation={onSelectConversation}
                 onDeleteConversation={onDeleteConversation}
                 onTogglePin={onTogglePin}
+                onRenameConversation={onRenameConversation}
                 isLoading={isLoading}
               />
             </div>

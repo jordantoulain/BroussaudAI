@@ -13,6 +13,7 @@ import { Skeleton, TextSkeleton } from '@/components/shared'
  * @param {function} props.onSelectConversation - Handler pour la sélection d'une conversation
  * @param {function} props.onDeleteConversation - Handler pour la suppression d'une conversation
  * @param {function} props.onTogglePin - Handler pour épingler/désépingler une conversation
+ * @param {function} props.onRenameConversation - Handler pour renommer une conversation
  * @param {boolean} [props.isLoading=false] - État de chargement
  * @returns {JSX.Element}
  */
@@ -22,6 +23,7 @@ export default function ConversationList({
   onSelectConversation,
   onDeleteConversation,
   onTogglePin,
+  onRenameConversation,
   isLoading = false 
 }) {
   // Filtrer les conversations
@@ -44,6 +46,7 @@ export default function ConversationList({
               onClick={() => onSelectConversation?.(conversation.id)}
               onDelete={onDeleteConversation}
               onTogglePin={onTogglePin}
+              onRename={onRenameConversation}
             />
           ))}
         </>

@@ -32,6 +32,10 @@ class ConversationResponse(BaseModel):
     created_at: str
 
 
+class ConversationUpdate(BaseModel):
+    title: Optional[str] = None
+
+
 # Routes pour les archives (doivent être avant /{conversation_id} pour éviter le conflit)
 @router.get("/archives")
 def get_archived_conversations(current_user: dict = Depends(get_current_user)):
@@ -222,4 +226,44 @@ def toggle_pin_conversation(conversation_id: str, current_user: dict = Depends(g
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors du toggle pin de la conversation: {str(e)}"
+        )
+
+
+@router.patch("/{conversation_id}", status_code=status.HTTP_200_OK)
+def update_conversation(conversation_id: str, update_data: ConversationUpdate, current_user: dict = Depends(get_current_user)):
+    """
+    Met à jour une conversation (ex: renommer le titre).
+    """
+    try:
+        # Vérifier que la conversation appartient à l'utilisateur
+        verify_conversation_owner(conversation_id, current_user["id"], check_active=True)
+        
+        # Préparer les données de mise à jour
+        update_fields = update_data.model_dump(exclude_unset=True)
+        
+        if not update_fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Aucune donnée de mise à jour fournie"
+            )
+        
+        # Mettre à jour la conversation
+        response = supabase.table("conversations") \
+            .update(update_fields) \
+            .eq("id", conversation_id) \
+            .execute()
+        
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation non trouvée après mise à jour"
+            )
+        
+        return response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la mise à jour de la conversation: {str(e)}"
         )

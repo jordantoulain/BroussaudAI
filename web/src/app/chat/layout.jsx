@@ -106,6 +106,17 @@ export default function ChatLayout({ children }) {
     }
   }, [fetchConversations])
 
+  // Handler pour renommer une conversation
+  const handleRenameConversation = useCallback(async (convId, newTitle) => {
+    try {
+      await api.patch(`/conversations/${convId}`, { title: newTitle })
+      await fetchConversations()
+    } catch (err) {
+      console.error('Erreur renommage conversation:', err)
+      throw err
+    }
+  }, [fetchConversations])
+
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarCollapsed(!isSidebarCollapsed)
   }, [isSidebarCollapsed])
@@ -129,6 +140,7 @@ export default function ChatLayout({ children }) {
         onSelectConversation={handleSelectConversation}
         onDeleteConversation={handleDeleteConversation}
         onTogglePin={handleTogglePin}
+        onRenameConversation={handleRenameConversation}
         isMobile={isMobile}
         isCollapsed={isSidebarCollapsed}
         onToggle={handleToggleSidebar}
