@@ -8,6 +8,8 @@ import { ThumbsUp, ThumbsDown, Search, MessageSquare, Forward, ChevronLeft, Chev
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
+import { parseTextWithCharts } from '@/utils/chartParser'
+import ApexChartComponent from '@/components/chat/ApexChartComponent'
 
 /**
  * Nettoie le texte pour préparer l'affichage markdown
@@ -297,12 +299,20 @@ export default function AdminReviewsPage() {
                         <span className="font-medium">Message évalué</span>
                       </div>
                       <div className="text-neutral-700 bg-neutral-50 p-3 rounded-lg markdown-content">
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkGfm]} 
-                          rehypePlugins={[rehypeRaw]}
-                        >
-                          {prepareMarkdownText(review.message_content || 'Contenu non disponible')}
-                        </ReactMarkdown>
+                        {parseTextWithCharts(review.message_content || 'Contenu non disponible').map((item, index) => {
+                          if (item.type === 'chart') {
+                            return <ApexChartComponent key={`chart-${review.id}-${index}`} config={item.content} className="my-4" />
+                          }
+                          return (
+                            <ReactMarkdown 
+                              key={`text-${review.id}-${index}`}
+                              remarkPlugins={[remarkGfm]} 
+                              rehypePlugins={[rehypeRaw]}
+                            >
+                              {prepareMarkdownText(item.content)}
+                            </ReactMarkdown>
+                          )
+                        })}
                       </div>
                     </div>
                     
