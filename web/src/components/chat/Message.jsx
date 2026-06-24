@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
-import { Search, FileText, MessageCircle } from 'lucide-react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { Search, FileText, MessageCircle, Volume2 } from 'lucide-react'
 import TagBadge from './TagBadge'
 import MessageMeta from './MessageMeta'
 import ReviewModal from './ReviewModal'
@@ -32,6 +32,70 @@ function prepareMarkdownText(text) {
   cleaned = cleaned.replace(/&nbsp;/gi, ' ')
   
   return cleaned
+}
+
+/**
+ * Nettoie le texte en supprimant tout le markdown pour la synthèse vocale
+ * @param {string} text - Texte à nettoyer
+ * @returns {string} Texte sans markdown
+ */
+function cleanTextForTTS(text) {
+  if (!text || typeof text !== 'string') {
+    return ''
+  }
+  
+  let cleaned = text
+  
+  // Supprimer les graphiques
+  cleaned = cleaned.replace(/%CHART:[\s\S]*?%ENDCHART%/g, '')
+  
+  // Supprimer les tableaux markdown
+  cleaned = cleaned.replace(/^[\|].*[\|]$/gm, '')
+  cleaned = cleaned.replace(/^[\|]?[:-]+[-\|:]+$/gm, '')
+  cleaned = cleaned.replace(/\|/g, ' ')
+  
+  // Supprimer les balises markdown
+  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1')
+  cleaned = cleaned.replace(/\*(.*?)\*/g, '$1')
+  cleaned = cleaned.replace(/_(.*?)_/g, '$1')
+  cleaned = cleaned.replace(/`(.*?)`/g, '$1')
+  cleaned = cleaned.replace(/~~(.*?)~~/g, '$1')
+  cleaned = cleaned.replace(/\[(.*?)\]\(.*?\)/g, '$1')
+  cleaned = cleaned.replace(/!\[(.*?)\]\(.*?\)/g, '')
+  cleaned = cleaned.replace(/^#+/gm, '')
+  cleaned = cleaned.replace(/^- /gm, '')
+  cleaned = cleaned.replace(/^\d+\. /gm, '')
+  cleaned = cleaned.replace(/---/g, '')
+  cleaned = cleaned.replace(/^>/gm, '')
+  cleaned = cleaned.replace(/```[\s\S]*?```/g, '')
+  cleaned = cleaned.replace(/^```.*$/gm, '')
+  
+  // Nettoyer les sauts de ligne et espaces multiples
+  cleaned = cleaned.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim()
+  
+  return cleaned
+}
+
+/**
+ * Extrait le texte brut d'un message pour la synthèse vocale
+ * Ignore les graphiques et nettoie le markdown
+ * @param {string} text - Texte à parser
+ * @returns {string} Texte prêt pour la synthèse vocale
+ */
+function extractTextForTTS(text) {
+  if (!text || typeof text !== 'string') {
+    return ''
+  }
+  
+  const parsedContent = parseTextWithCharts(text)
+  
+  const textParts = parsedContent
+    .filter(item => item.type === 'text')
+    .map(item => cleanTextForTTS(item.content))
+    .filter(part => part.trim() !== '')
+    .join(' ')
+  
+  return textParts
 }
 
 /**
@@ -101,6 +165,8 @@ function MessageContent({ text }) {
 export default function Message({ message, userEmail, isAdminView = false }) {
   const { id, isClient, text, data } = message
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [isSpeechSupported, setIsSpeechSupported] = useState(false)
 
   const handleOpenReviewModal = useCallback(() => {
     setIsReviewModalOpen(true)
@@ -114,6 +180,45 @@ export default function Message({ message, userEmail, isAdminView = false }) {
     // Optionnel : rafraîchir ou afficher une notification
     handleCloseReviewModal()
   }, [handleCloseReviewModal])
+
+  // Vérifier si l'API Speech Synthesis est supportée
+  useEffect(() => {
+    setIsSpeechSupported('speechSynthesis' in window)
+  }, [])
+
+  // Fonction pour lancer la lecture vocale
+  const handleSpeak = useCallback(() => {
+    const textToSpeak = extractTextForTTS(prepareMarkdownText(data?.answer || data?.response || message.response || text || ''))
+    if (!textToSpeak || !isSpeechSupported) return
+
+    // Arrêter si déjà en train de parler
+    if (isSpeaking) {
+      speechSynthesis.cancel()
+      setIsSpeaking(false)
+      return
+    }
+
+    // Créer un nouvel utterance
+    const utterance = new SpeechSynthesisUtterance(textToSpeak)
+    utterance.lang = 'fr-FR'
+    utterance.rate = 1
+
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => setIsSpeaking(false)
+    utterance.onerror = () => setIsSpeaking(false)
+
+    speechSynthesis.speak(utterance)
+  }, [data, message, text, isSpeaking, isSpeechSupported])
+
+  // Nettoyer la synthèse vocale au démontage
+  useEffect(() => {
+    return () => {
+      if (isSpeaking) {
+        speechSynthesis.cancel()
+        setIsSpeaking(false)
+      }
+    }
+  }, [isSpeaking])
   
   if (isClient) {
     // Message utilisateur
@@ -147,7 +252,7 @@ export default function Message({ message, userEmail, isAdminView = false }) {
           </div>
           
         {/* Icônes de droite (contexte et avis) */}
-        <div className="relative flex flex-col gap-2 flex-shrink-0">
+        <div className="relative flex flex-col gap-2 flex-shrink-0 bg-neutral-100 p-2 ml-2 rounded-full">
           {/* Icône loupe avec tooltip contextes et confiance */}
           {(data?.contexts || message.contexts || data?.confidence !== undefined || message.confidence !== undefined) && (
             <div className="relative group">
@@ -184,6 +289,20 @@ export default function Message({ message, userEmail, isAdminView = false }) {
                 )}
               </div>
             </div>
+          )}
+          
+          {/* Bouton Text-to-Speech - uniquement pour les messages IA avec du texte */}
+          {isSpeechSupported && (data?.answer || data?.response || message.response || text) && (
+            <button
+              onClick={handleSpeak}
+              className="relative group"
+              aria-label={isSpeaking ? "Arrêter la lecture" : "Lire le message"}
+            >
+              <Volume2 className={`cursor-pointer w-4 h-4 transition-colors ${isSpeaking ? 'text-orange-500' : 'text-neutral-500 hover:text-orange-500'}`} />
+              <span className={`absolute bottom-full right-0 mb-2 w-max p-2 bg-neutral-800 text-white text-xs rounded-lg z-20 ${isSpeaking ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-200 pointer-events-none whitespace-nowrap`}>
+                {isSpeaking ? 'Arrêter' : 'Lire'}
+              </span>
+            </button>
           )}
           
           {/* Bouton avis - pas pour le message de bienvenue et pas en mode admin */}
