@@ -780,3 +780,80 @@ def update_system_prompt(system_prompt: dict, current_user: dict = Depends(get_c
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la mise à jour du system prompt: {str(e)}"
         )
+
+
+# Maintenance Mode Endpoints
+
+@router.get("/maintenance", response_model=dict)
+def get_maintenance_status(current_user: dict = Depends(get_current_user)):
+    """Récupère l'état du mode maintenance"""
+    verify_admin(current_user)
+    
+    try:
+        mode_response = supabase.table("config") \
+            .select("value") \
+            .eq("key", "maintenance_mode") \
+            .maybe_single() \
+            .execute()
+        
+        reason_response = supabase.table("config") \
+            .select("value") \
+            .eq("key", "maintenance_reason") \
+            .maybe_single() \
+            .execute()
+        
+        mode_value = "false"
+        if mode_response and hasattr(mode_response, 'data') and mode_response.data:
+            mode_value = mode_response.data.get("value", "false")
+        
+        reason_value = ""
+        if reason_response and hasattr(reason_response, 'data') and reason_response.data:
+            reason_value = reason_response.data.get("value", "")
+        
+        return {
+            "maintenance_mode": mode_value.lower() == "true",
+            "maintenance_reason": reason_value
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la récupération du mode maintenance: {str(e)}"
+        )
+
+
+@router.post("/maintenance", status_code=status.HTTP_200_OK)
+def update_maintenance_mode(maintenance_data: dict, current_user: dict = Depends(get_current_user)):
+    """Active ou désactive le mode maintenance avec une raison"""
+    verify_admin(current_user)
+    
+    try:
+        mode_value = maintenance_data.get("maintenance_mode", False)
+        reason_value = maintenance_data.get("maintenance_reason", "")
+        
+        # Convertir le booléen en string pour le stockage
+        mode_str = "true" if mode_value else "false"
+        
+        # Mettre à jour le mode maintenance
+        supabase.table("config") \
+            .update({"value": mode_str}) \
+            .eq("key", "maintenance_mode") \
+            .execute()
+        
+        # Mettre à jour la raison
+        supabase.table("config") \
+            .update({"value": reason_value}) \
+            .eq("key", "maintenance_reason") \
+            .execute()
+        
+        return {
+            "message": "Mode maintenance mis à jour avec succès",
+            "maintenance_mode": mode_value,
+            "maintenance_reason": reason_value
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la mise à jour du mode maintenance: {str(e)}"
+        )

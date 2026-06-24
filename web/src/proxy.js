@@ -27,6 +27,43 @@ export async function proxy(request) {
   // Récupération de l'utilisateur actif
   const { data: { user } } = await supabase.auth.getUser()
   
+  // Vérifier le mode maintenance
+  const { data: modeData } = await supabase
+    .from('config')
+    .select('value')
+    .eq('key', 'maintenance_mode')
+    .single()
+  
+  const isMaintenance = modeData?.value === 'true' || false
+  
+  // Si mode maintenance est activé
+  if (isMaintenance) {
+    // Vérifier si l'utilisateur est admin
+    let isAdmin = false
+    
+    if (user) {
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      
+      const role = dbUser?.role || 'USER'
+      isAdmin = role === 'ADMIN'
+    }
+    
+    // Si pas admin, rediriger vers /maintenance sauf si déjà sur /maintenance ou /login
+    if (!isAdmin) {
+      const path = request.nextUrl.pathname
+      const allowedPaths = ['/maintenance', '/login', '/register', '/verify-totp']
+      
+      // Si l'utilisateur essaie d'accéder à une page autre que celles autorisées
+      if (!allowedPaths.some(p => path.startsWith(p))) {
+        return NextResponse.redirect(new URL('/maintenance', request.url))
+      }
+    }
+  }
+  
   // Protection /chat
   if (request.nextUrl.pathname.startsWith('/chat') && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
@@ -56,5 +93,5 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/chat(:/?)', '/admin/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
 }

@@ -94,6 +94,14 @@ def init_db():
                     );
                 """)
 
+                # Insert default maintenance mode config if not exists
+                cur.execute("""
+                    INSERT INTO config (key, value)
+                    VALUES ('maintenance_mode', 'false'),
+                           ('maintenance_reason', '')
+                    ON CONFLICT (key) DO NOTHING;
+                """)
+
             conn.commit()
     except Exception as e:
         return
