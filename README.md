@@ -6,6 +6,15 @@
 
 ---
 
+## Photos
+![Main](https://github.com/jordantoulain/BroussaudAI/blob/supabase-auth/demo/main.png?raw=true "Main")
+![Admin](https://github.com/jordantoulain/BroussaudAI/blob/supabase-auth/demo/admin.png?raw=true "Admin")
+![Reviews](https://github.com/jordantoulain/BroussaudAI/blob/supabase-auth/demo/reviews.png?raw=true "Reviews")
+![Login](https://github.com/jordantoulain/BroussaudAI/blob/supabase-auth/demo/login.png?raw=true "Login")
+![TOTP](https://github.com/jordantoulain/BroussaudAI/blob/supabase-auth/demo/totp.png?raw=true "TOTP")
+
+---
+
 ## 📚 Contexte Pédagogique
 
 Ce projet s'inscrit dans le cadre d'un **stage de fin de première année du BTS SIO** réalisé au sein de l'entreprise **Broussaud**, spécialisée dans la fabrication de chaussettes de qualité en Nouvelle-Aquitaine. L'objectif pédagogique est de concevoir et développer une **application full-stack d'intelligence artificielle conversationnelle** dédiée à l'entreprise, permettant aux collaborateurs d'accéder à une assistance technique et informationnelle basée sur les données internes.
