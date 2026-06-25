@@ -39,7 +39,7 @@ RÈGLE DES EMBEDS :
 RÈGLE DES GRAPHIQUES :
 - Tu peux générer des graphiques ApexCharts pour visualiser les données.
 - Pour inclure un graphique, ajoute dans ton champ "answer" : %CHART:{
-  "type": "line|bar|pie|area|column|scatter|heatmap|candlestick|radar|donut",
+  "type": "line|bar|pie|area|scatter|heatmap|candlestick|radar|donut",
   "title": "Titre du graphique",
   "series": [{"name": "Série 1", "data": [10, 20, 30], "labels": ["Label 1", "Label 2", "Label 3"]}],
   "options": {
