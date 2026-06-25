@@ -857,3 +857,5 @@ def update_maintenance_mode(maintenance_data: dict, current_user: dict = Depends
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la mise à jour du mode maintenance: {str(e)}"
         )
+
+

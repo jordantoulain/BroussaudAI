@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, MessageSquare, Star, FileText, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, MessageSquare, Star, FileText, Settings, Cpu } from 'lucide-react'
 
 /**
  * Navigation entre les pages d'administration
@@ -42,6 +42,12 @@ export default function AdminNavigation() {
       href: '/admin/documents',
       icon: FileText,
       match: (path) => path.startsWith('/admin/documents')
+    },
+    { 
+      label: 'Modèles', 
+      href: '/admin/models',
+      icon: Cpu,
+      match: (path) => path.startsWith('/admin/models')
     },
     { 
       label: 'System Prompt', 

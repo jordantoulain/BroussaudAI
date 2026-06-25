@@ -27,9 +27,9 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 |--------|-------------|-------------|-------------|------------|
 | `core/supabase_client.py` | Client Supabase configuré et réutilisable | `from core.supabase_client import supabase` | C1.2, C1.3 | ⭐⭐ |
 | `core/supabase_init.py` | Initialisation des tables DB (users, conversations, messages, sessions, reviews, stats_ia, mfa_secrets, **config**) | Appelé au startup de l'application | C1.2, C1.3 | ⭐⭐⭐ |
-| `core/llm.py` | Configuration des modèles LLM et embeddings | Importé au démarrage | C1.2, C1.3 | ⭐⭐ |
+| `core/llm.py` | Configuration dynamique des modèles LLM et embeddings (Gemini, Mistral, Ollama) avec chargement depuis la DB Supabase (table config) et fallback vers les variables d'environnement. **Rechargement à chaud** possible via `reload_llm_config()`. | Importé au démarrage, fonctions `get_llm_config_from_db()`, `configure_llm(config)`, `reload_llm_config()` | C1.2, C1.3 | ⭐⭐⭐ |
 | `core/database.py` | Gestion centralisée des connexions MariaDB | Pooling de connexions | C1.2, C1.4 | ⭐⭐⭐ |
-| `core/crypto_utils.py` | Fonctions cryptographiques (chiffrement Fernet pour MFA) | Sécurité des secrets | C2.2, C2.3 | ⭐⭐⭐ |
+| `core/crypto_utils.py` | Fonctions cryptographiques (chiffrement Fernet pour MFA et API keys) avec `CryptoUtils`, `encrypt_mfa_secret`, `decrypt_mfa_secret`, `encrypt_api_key`, `decrypt_api_key` | Sécurité des secrets | C2.2, C2.3 | ⭐⭐⭐ |
 | `core/sanitize.py` | Sanitization des entrées avec bleach | Protection contre XSS | C2.2 | ⭐⭐ |
 
 ### 🎯 Services (Architecture Modulaire)

@@ -37,6 +37,7 @@
 | ✅ | **Moyenne** | Serveur MCP | FastMCP + Supabase (tools: stats, hello_world) | C1.2, C1.3 | Backend |
 | ✅ | **Moyenne** | Statistiques IA | Dashboard admin avec MiniChart, suivi métriques | C1.2, C1.3 | Backend/Frontend |
 | ✅ | **Moyenne** | Génération PDF | Export des conversations en PDF | C1.2 | Backend |
+| ✅ | **Moyenne** | Configuration LLM | Sélection dynamique des modèles (Gemini, Mistral, Ollama) via interface admin | C1.2, C1.3 | Backend/Frontend |
 
 ---
 
@@ -65,7 +66,7 @@
 | ✅ | **Critique** | Système d'authentification | JWT, Bcrypt, MFA (TOTP) | C1.2, C2.3 | ⭐⭐⭐⭐ |
 | ✅ | **Haute** | Configuration Supabase | Client, initialisation DB, tables | C1.2, C1.3 | ⭐⭐⭐ |
 | ✅ | **Haute** | Service RAG | LlamaIndex + Google GenAI (Gemini) | C1.2, C1.3 | ⭐⭐⭐⭐ |
-| ✅ | **Haute** | Routes API | 30+ endpoints RESTful | C1.2 | ⭐⭐⭐ |
+| ✅ | **Haute** | Routes API | 34+ endpoints RESTful | C1.2 | ⭐⭐⭐ |
 | ✅ | **Haute** | Gestion conversations | CRUD, soft-delete, épinglage | C1.2, C2.2 | ⭐⭐⭐ |
 | ✅ | **Moyenne** | Serveur MCP | FastMCP + outils statistiques | C1.2, C1.3 | ⭐⭐⭐⭐ |
 | ✅ | **Moyenne** | Validation des données | Pydantic, Sanitization | C2.2 | ⭐⭐⭐ |
@@ -150,7 +151,7 @@
 | **Durée totale** | [X] semaines | 15 semaines | ✅ |
 | **Heures investies** | [X] heures | [Y] heures | [✅/⚠️/❌] |
 | **Features implémentées** | 25+ | 25 | ✅ |
-| **Routes API** | 32+ | 32 | ✅ |
+| **Routes API** | 34+ | 34 | ✅ |
 | **Composants React** | 42+ | 42 | ✅ |
 | **Tests unitaires** | 0% | 80% | ❌ |
 | **Tests d'intégration** | 50% | 100% | ⚠️ |
