@@ -39,7 +39,7 @@ Ce registry (catalogue) documente l'ensemble des **composants, modules, fonction
 | Chemin | Description | Exports | Utilisation | Compétences | Apprentissages |
 |--------|-------------|--------|-------------|-------------|---------------|
 | `services/agent.py` | Point d'entrée principal pour les services agent (backward compatible) | `RAGConfig`, `RAGAgentService`, `chat_with_agent`, `get_rag_service` | Interface unifiée pour le RAG | C1.2, C1.3 | Architecture modulaire |
-| `services/config.py` | Configuration RAG avec dataclass | `RAGConfig` (collection_name, dimension, similarity_top_k, mcp_server_url, prompts_dir) | Centralisation des paramètres | C1.2, C4.1 | Pattern Configuration Object |
+| `services/config.py` | Configuration RAG avec dataclass, **dimension dynamique** selon le modèle LLM (chargée depuis DB via `from_db()` ou depuis env vars via `from_env()`) | `RAGConfig` (collection_name, dimension, similarity_top_k, mcp_server_url, prompts_dir) | Centralisation des paramètres, chargement depuis DB | C1.2, C4.1 | Pattern Configuration Object |
 | `services/prompts.py` | Gestion des templates de prompts | `PromptManager`, `load_prompt`, `get_prompt_template` | Séparation des prompts du code | C1.2, C4.1 | Séparation des responsabilités |
 | `services/utils.py` | Fonctions utilitaires | `extract_json_from_response`, `patch_Gemini_schema` | Réutilisation de code | C1.2 | DRY principle |
 | `services/pdf_generator.py` | Génération de PDF et upload Supabase | `PDFGenerator`, `generate_conversation_pdf_link`, `upload_to_supabase_storage` | Export des conversations | C1.2, C1.3 | Génération de documents |

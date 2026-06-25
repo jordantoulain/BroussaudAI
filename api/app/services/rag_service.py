@@ -29,11 +29,11 @@ class RAGAgentService:
         Initialize RAG agent service.
         
         Args:
-            config: RAG configuration. Uses environment variables if not provided.
+            config: RAG configuration. Uses database config if not provided.
         """
         from core.supabase_client import supabase
         
-        self.config = config or RAGConfig.from_env()
+        self.config = config or RAGConfig.from_db()
         self.prompt_manager = PromptManager(self.config.prompts_dir)
 
         self.qa_prompt = self.prompt_manager.get_prompt_template("qa_prompt")

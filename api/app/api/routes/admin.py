@@ -15,6 +15,67 @@ supabase_admin = create_client(
     os.getenv("SUPABASE_KEY", "")
 )
 
+
+def get_current_collection_name() -> str:
+    """
+    Récupère le nom de la collection vector store actuelle depuis la DB.
+    Retourne 'documents_gemini' par défaut si non configuré.
+    """
+    try:
+        response = supabase.table("config") \
+            .select("value") \
+            .eq("key", "llm_collection_name") \
+            .maybe_single() \
+            .execute()
+        
+        if response and hasattr(response, 'data') and response.data and response.data.get("value"):
+            return response.data["value"]
+        else:
+            return "documents_gemini"
+    except Exception:
+        return "documents_gemini"
+
+
+def get_current_dimension() -> int:
+    """
+    Récupère la dimension d'embedding actuelle depuis la DB.
+    Retourne 3072 par défaut si non configuré.
+    """
+    try:
+        response = supabase.table("config") \
+            .select("value") \
+            .eq("key", "llm_embed_dimension") \
+            .maybe_single() \
+            .execute()
+        
+        if response and hasattr(response, 'data') and response.data and response.data.get("value"):
+            return int(response.data["value"])
+        else:
+            return 3072
+    except Exception:
+        return 3072
+
+
+def table_exists(table_name: str) -> bool:
+    """
+    Vérifie si une table existe dans le schéma vecs.
+    Retourne False si la table n'existe pas (au lieu de lever une exception).
+    """
+    try:
+        # Essayer une requête simple pour vérifier l'existence
+        result = supabase.schema("vecs").table(table_name) \
+            .select("id") \
+            .limit(1) \
+            .execute()
+        return True
+    except Exception as e:
+        # Vérifier si c'est une erreur de table introuvable
+        error_str = str(e)
+        if "Could not find the table" in error_str or "PGRST205" in error_str:
+            return False
+        # Pour toute autre erreur, on laisse propager
+        raise
+
 def verify_admin(current_user: dict):
     """
     Vérifie que l'utilisateur a le rôle ADMIN en interrogeant directement 
@@ -116,7 +177,14 @@ def get_stats():
         users_count = supabase.table("users").select("id").execute()
         conversations_count = supabase.table("conversations").select("id").execute()
         messages_count = supabase.table("messages").select("id").execute()
-        vectors_count = supabase.schema("vecs").table("documents_gemini").select("id").execute()
+        
+        # Compter les vecteurs (gestion si table n'existe pas)
+        collection_name = get_current_collection_name()
+        if table_exists(collection_name):
+            vectors_count = supabase.schema("vecs").table(collection_name).select("id").execute()
+        else:
+            # Créer un objet vide pour éviter les erreurs
+            vectors_count = type('obj', (object,), {'data': []})()
         
         from datetime import datetime, timezone, timedelta
         today = datetime.now(timezone.utc).date()
@@ -607,7 +675,17 @@ def list_documents(current_user: dict = Depends(get_current_user)):
     verify_admin(current_user)
     
     try:
-        response = supabase.schema("vecs").table("documents_gemini") \
+        collection_name = get_current_collection_name()
+        
+        # Vérifier si la table existe
+        if not table_exists(collection_name):
+            return {
+                "documents": [],
+                "count": 0,
+                "warning": f"La table '{collection_name}' n'existe pas encore. Elle sera créée automatiquement lors du premier upload de document."
+            }
+        
+        response = supabase.schema("vecs").table(collection_name) \
             .select("id, vec, metadata") \
             .execute()
         
@@ -644,7 +722,16 @@ def delete_document(filename: str, current_user: dict = Depends(get_current_user
     verify_admin(current_user)
     
     try:
-        result = supabase.schema("vecs").table("documents_gemini") \
+        collection_name = get_current_collection_name()
+        
+        # Vérifier si la table existe
+        if not table_exists(collection_name):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"La table '{collection_name}' n'existe pas encore. Impossible de supprimer le document."
+            )
+        
+        result = supabase.schema("vecs").table(collection_name) \
             .delete() \
             .eq("metadata->>filename", filename) \
             .execute()

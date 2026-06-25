@@ -101,7 +101,7 @@ def get_llm_config(current_user: dict = Depends(get_current_user)):
     verify_admin(current_user)
     
     try:
-        config_keys = ["llm_provider", "llm_model", "llm_api_key", "llm_base_url", "llm_embed_model"]
+        config_keys = ["llm_provider", "llm_model", "llm_api_key", "llm_base_url", "llm_embed_model", "llm_embed_dimension", "llm_collection_name"]
         config_data = {}
         
         for key in config_keys:
@@ -122,22 +122,90 @@ def get_llm_config(current_user: dict = Depends(get_current_user)):
             try:
                 config_data["llm_api_key"] = decrypt_api_key(encrypted_api_key)
             except Exception as e:
-                # Si le décryptage échoue, retourner la clé chiffrée (pour compatibilité)
-                # ou None si c'est incohérent
+                # Si le décryptage échoue, retourner None
                 config_data["llm_api_key"] = None
+        
+        # Calculer la dimension et le nom de collection si non stockés en DB
+        provider = config_data.get("llm_provider")
+        embed_model = config_data.get("llm_embed_model")
+        model = config_data.get("llm_model")
+        
+        if config_data.get("llm_embed_dimension") is None:
+            dimension = get_embed_dimension(provider, embed_model)
+            config_data["llm_embed_dimension"] = str(dimension)
+        else:
+            dimension = int(config_data.get("llm_embed_dimension") or 3072)
+        
+        if config_data.get("llm_collection_name") is None:
+            collection_name = get_collection_name(provider, model)
+            config_data["llm_collection_name"] = collection_name
+        else:
+            collection_name = config_data.get("llm_collection_name")
         
         return {
             "provider": config_data.get("llm_provider"),
             "model": config_data.get("llm_model"),
             "api_key": config_data.get("llm_api_key"),
             "base_url": config_data.get("llm_base_url"),
-            "embed_model": config_data.get("llm_embed_model")
+            "embed_model": config_data.get("llm_embed_model"),
+            "collection_name": collection_name,
+            "dimension": dimension
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la récupération de la configuration LLM: {str(e)}"
         )
+
+
+def get_embed_dimension(provider: str, embed_model: str = None) -> int:
+    """
+    Retourne la dimension de l'embedding selon le fournisseur et le modèle.
+    """
+    # Mapping des dimensions par fournisseur et modèle
+    dimension_map = {
+        "gemini": {
+            "gemini-embedding-2": 3072,
+            "gemini-embedding-1": 768,
+            # Default pour Gemini
+            None: 3072
+        },
+        "mistral": {
+            "mistral-embed-2312": 1024,
+            "mistral-embed-2311": 1024,
+            # Default pour Mistral
+            None: 1024
+        },
+        "ollama": {
+            "nomic-embed-text": 768,
+            "all-minilm": 384,
+            "bge-base-en": 768,
+            "bge-small-en": 384,
+            # Default pour Ollama
+            None: 768
+        }
+    }
+    
+    # Obtenir le mapping pour le fournisseur
+    provider_dimensions = dimension_map.get(provider, {})
+    
+    # Retourner la dimension pour le modèle spécifique ou le default
+    return provider_dimensions.get(embed_model, provider_dimensions.get(None, 3072))
+
+
+def get_collection_name(provider: str, model: str = None) -> str:
+    """
+    Retourne le nom de la collection Supabase Vector Store selon le fournisseur.
+    Chaque fournisseur a sa propre collection pour éviter les conflits de dimension.
+    """
+    # Mapping des noms de collection par fournisseur
+    collection_map = {
+        "gemini": "documents_gemini",
+        "mistral": "documents_mistral",
+        "ollama": "documents_ollama"
+    }
+    
+    return collection_map.get(provider, "documents_gemini")
 
 
 @router.post("/llm", status_code=status.HTTP_200_OK)
@@ -151,6 +219,10 @@ def update_llm_config(llm_config: dict, current_user: dict = Depends(get_current
         api_key = llm_config.get("api_key")
         base_url = llm_config.get("base_url")
         embed_model = llm_config.get("embed_model")
+        
+        # Calculer la dimension et le nom de collection
+        dimension = get_embed_dimension(provider, embed_model)
+        collection_name = get_collection_name(provider, model)
         
         # Encrypter la clé API avant stockage
         encrypted_api_key = None
@@ -169,7 +241,9 @@ def update_llm_config(llm_config: dict, current_user: dict = Depends(get_current
             "llm_model": model,
             "llm_api_key": encrypted_api_key,
             "llm_base_url": base_url,
-            "llm_embed_model": embed_model
+            "llm_embed_model": embed_model,
+            "llm_embed_dimension": str(dimension),
+            "llm_collection_name": collection_name
         }
         
         for key, value in config_updates.items():
@@ -200,6 +274,8 @@ def update_llm_config(llm_config: dict, current_user: dict = Depends(get_current
         
         return {
             "message": "Configuration LLM mise à jour avec succès",
+            "collection_name": collection_name,
+            "dimension": dimension,
             **llm_config
         }
     except HTTPException:

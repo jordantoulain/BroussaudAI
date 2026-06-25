@@ -18,6 +18,7 @@ export default function AdminDocumentsPage() {
   const [allDocuments, setAllDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [warning, setWarning] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalDocuments, setTotalDocuments] = useState(0)
@@ -61,9 +62,17 @@ export default function AdminDocumentsPage() {
       setTotalDocuments(fetchedDocuments.length)
       setDocuments(fetchedDocuments)
       setTotalPages(Math.ceil(fetchedDocuments.length / itemsPerPage))
+      
+      // Gérer le warning si la table n'existe pas
+      if (response.data.warning) {
+        setWarning(response.data.warning)
+      } else {
+        setWarning(null)
+      }
     } catch (err) {
       console.error('Erreur chargement documents:', err)
       setError('Impossible de charger les documents')
+      setWarning(null)
     } finally {
       setLoading(false)
     }
@@ -210,6 +219,14 @@ export default function AdminDocumentsPage() {
       {/* Notifications */}
       <ActionError message={actionError} />
       <ActionSuccess message={actionSuccess} />
+      
+      {/* Warning si la table n'existe pas */}
+      {warning && (
+        <div className="mb-4 flex items-center gap-3 bg-orange-500 text-white px-4 py-3 rounded-xl">
+          <TriangleAlert className="w-5 h-5 flex-shrink-0" />
+          <span className="text-sm">{warning}</span>
+        </div>
+      )}
       
       {/* Barre de recherche */}
       <div className="relative mb-3">
