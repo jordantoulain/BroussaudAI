@@ -32,9 +32,7 @@ from fastapi import status
 # Simple rate limiter storage: {(ip, endpoint): [(timestamp, ...), ...]}
 rate_limit_store = defaultdict(list)
 RATE_LIMITS = {
-    "default": {"limit": 100, "window": 60},  # 100 requests/minute
-    "/auth/login": {"limit": 5, "window": 60},  # 5 requests/minute
-    "/auth/register": {"limit": 3, "window": 60},  # 3 requests/minute
+    "default": {"limit": 100, "window": 60}
 }
 
 def check_rate_limit(request: Request, endpoint: str = None):

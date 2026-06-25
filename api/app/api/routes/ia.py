@@ -15,6 +15,46 @@ from core.sanitize import sanitize_text, sanitize_filename
 from services.agent import get_rag_service, chat_with_agent
 from datetime import datetime
 
+
+def get_current_collection_name() -> str:
+    """
+    Récupère le nom de la collection vector store actuelle depuis la DB.
+    Retourne 'documents_gemini' par défaut si non configuré.
+    """
+    try:
+        response = supabase.table("config") \
+            .select("value") \
+            .eq("key", "llm_collection_name") \
+            .maybe_single() \
+            .execute()
+        
+        if response and hasattr(response, 'data') and response.data and response.data.get("value"):
+            return response.data["value"]
+        else:
+            return "documents_gemini"
+    except Exception:
+        return "documents_gemini"
+
+
+def table_exists(table_name: str) -> bool:
+    """
+    Vérifie si une table existe dans le schéma vecs.
+    Retourne False si la table n'existe pas (au lieu de lever une exception).
+    """
+    try:
+        result = supabase.schema("vecs").table(table_name) \
+            .select("id") \
+            .limit(1) \
+            .execute()
+        return True
+    except Exception as e:
+        # Vérifier si c'est une erreur de table introuvable
+        error_str = str(e)
+        if "Could not find the table" in error_str or "PGRST205" in error_str:
+            return False
+        # Pour toute autre erreur, on laisse propager
+        raise
+
 router = APIRouter(prefix="/ai", tags=["Intelligence Artificielle"])
 
 # Constants for file upload validation
@@ -265,18 +305,25 @@ async def embed(
         # Valider le fichier (taille, extension, type MIME)
         await validate_upload_file(file)
         
-        # Vérifier si un document avec le même nom existe déjà
-        existing_response = supabase.schema("vecs").table("documents_gemini") \
-            .select("id, metadata") \
-            .execute()
+        # Extraire le nom de fichier
+        filename = file.filename
+        collection_name = get_current_collection_name()
         
-        existing_documents = existing_response.data or []
-        for doc in existing_documents:
-            if doc.get("metadata", {}).get("filename") == file.filename:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Un document avec le nom '{file.filename}' existe déjà"
-                )
+        # Vérifier si la table existe avant de faire la requête
+        if table_exists(collection_name):
+            # Vérifier si un document avec le même nom existe déjà
+            existing_response = supabase.schema("vecs").table(collection_name) \
+                .select("id, metadata") \
+                .execute()
+            
+            existing_documents = existing_response.data or []
+            for doc in existing_documents:
+                if doc.get("metadata", {}).get("filename") == filename:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=f"Un document avec le nom '{filename}' existe déjà"
+                    )
+        # Si la table n'existe pas, on passe directement à l'upload
         
         async with get_rag_service() as service:
             # Déterminer le suffixe et le reader selon l'extension

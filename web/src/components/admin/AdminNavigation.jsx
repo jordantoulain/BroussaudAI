@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Users, MessageSquare, Star, FileText, Settings, Cpu } from 'lucide-react'
 
 /**
  * Navigation entre les pages d'administration
@@ -15,27 +16,44 @@ export default function AdminNavigation() {
     { 
       label: 'Dashboard', 
       href: '/admin/dashboard',
+      icon: LayoutDashboard,
       match: (path) => path === '/admin/dashboard' || path === '/admin'
     },
     { 
       label: 'Membres', 
       href: '/admin/members',
+      icon: Users,
       match: (path) => path.startsWith('/admin/members')
     },
     { 
       label: 'Conversations', 
       href: '/admin/conversations',
+      icon: MessageSquare,
       match: (path) => path.startsWith('/admin/conversations')
     },
     { 
       label: 'Avis', 
       href: '/admin/reviews',
+      icon: Star,
       match: (path) => path.startsWith('/admin/reviews')
     },
     { 
       label: 'Documents', 
       href: '/admin/documents',
+      icon: FileText,
       match: (path) => path.startsWith('/admin/documents')
+    },
+    { 
+      label: 'Modèles', 
+      href: '/admin/models',
+      icon: Cpu,
+      match: (path) => path.startsWith('/admin/models')
+    },
+    { 
+      label: 'System Prompt', 
+      href: '/admin/system-prompt',
+      icon: Settings,
+      match: (path) => path.startsWith('/admin/system-prompt')
     }
   ]
 
@@ -43,6 +61,7 @@ export default function AdminNavigation() {
     <nav className="flex flex-col gap-2">
       {navItems.map((item) => {
         const isActive = item.match(pathname)
+        const Icon = item.icon
         return (
           <Link
             key={item.href}
@@ -53,6 +72,7 @@ export default function AdminNavigation() {
                 : 'text-neutral-700 hover:bg-neutral-200'
             }`}
           >
+            <Icon className="w-4 h-4" />
             <span>{item.label}</span>
           </Link>
         )

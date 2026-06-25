@@ -29,3 +29,4 @@ llama-index-llms-mistralai
 llama-index-embeddings-mistralai
 llama-index-callbacks-arize-phoenix
 arize-phoenix
+gotrue

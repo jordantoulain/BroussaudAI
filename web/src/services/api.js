@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
+import { createBrowserClient } from '@supabase/ssr';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -8,11 +8,19 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 });
 
+// Initialisation du client côté navigateur
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 api.interceptors.request.use(
-  (config) => {
-    const token = Cookies.get('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    // getSession() vérifie le token et le rafraîchit tout seul si nécessaire !
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
     }
     return config;
   },
@@ -21,23 +29,10 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshResponse = await axios.post('/api/refresh');
-        
-        const newAccessToken = refreshResponse.data.access_token;
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        
-        return api(originalRequest);
-      } catch (refreshError) {
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
+  (error) => {
+    // Plus besoin de logique de refresh manuelle ici
+    if (error.response?.status === 401) {
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

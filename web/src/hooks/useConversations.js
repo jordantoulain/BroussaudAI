@@ -60,6 +60,23 @@ export function useConversations() {
     }
   }, [])
 
+  /**
+   * Met à jour une conversation (ex: renommer le titre)
+   * @param {string} conversationId - ID de la conversation à mettre à jour
+   * @param {Object} updates - Données de mise à jour
+   * @param {string} updates.title - Nouveau titre
+   * @returns {Promise<Object>} La conversation mise à jour
+   */
+  const updateConversation = useCallback(async (conversationId, updates) => {
+    try {
+      const response = await api.patch(`/conversations/${conversationId}`, updates)
+      return response.data
+    } catch (err) {
+      console.error('Erreur update conversation:', err)
+      throw err
+    }
+  }, [])
+
   // Charger les conversations au montage
   useEffect(() => {
     fetchConversations()
@@ -71,6 +88,7 @@ export function useConversations() {
     error,
     fetchConversations,
     fetchConversation,
-    deleteConversation
+    deleteConversation,
+    updateConversation
   }
 }

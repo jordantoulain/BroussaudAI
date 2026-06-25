@@ -5,9 +5,15 @@
 
 ---
 
-## 23/06/2026 - Semaine 5 (Nouvelle Feature)
+## 25/06/2026 - Semaine 5 (Nouvelle Feature)
 
-- [feat] - **Bouton de défilement vers le bas** : Ajout d'un bouton flottant (icône ChevronDown) qui apparaît lorsque l'utilisateur a défilé vers le haut dans une conversation. Permet de redescendre rapidement au dernier message. Modifications : useChat.js (exposition de scrollToBottom), MessageList.jsx (passage du ref de conteneur et callback scroll), page.jsx (gestion de l'état showScrollButton + logique de détection). Style : bouton orange-500, rond, fixe en bas à droite avec z-50 pour éviter le masque gradient, animation hover scale-110.
+- [feat] - **Configuration dynamique des modèles LLM** : Ajout d'une interface admin pour sélectionner et configurer les modèles LLM (Gemini, Mistral, Ollama). Inclut : endpoints API GET/POST `/config/llm` (dans `config.py`) avec **calcul automatique de la dimension d'embedding** (Gemini: 3072, Mistral: 1024, Ollama: 768/384 selon le modèle), **gestion dynamique des collections** (documents_gemini, documents_mistral, documents_ollama) via `get_collection_name()`, stockage de `llm_embed_dimension` et `llm_collection_name` en DB, page web `admin/models/page.jsx` avec sélection du fournisseur, modèle libre pour Ollama, gestion des clés API et URLs, **rechargement à chaud** de la configuration via `reload_llm_config()` pour appliquer les changements immédiatement, mise à jour de `RAGConfig` dans `services/config.py` pour charger la dimension et le nom de collection depuis la DB. **Sécurité** : vérification du rôle ADMIN requise, **clé API encryptée en DB** via Fernet avec la variable `ENCRYPTION_KEY`. Ajout de `ENCRYPTION_KEY` dans docker-compose.yml. Technos : Supabase, FastAPI, React, LlamaIndex.
+
+---
+
+## 24/06/2026 - Semaine 5 (Nouvelle Feature)
+
+- [feat] - **Page admin pour gérer le system prompt** : Ajout d'une page d'administration pour configurer dynamiquement le system prompt de l'agent IA via l'interface web. Inclut : table `config` en base (clé/valeur), endpoints API GET/POST `/admin/config/system-prompt`, intégration dans `rag_service.py` pour récupérer le prompt depuis la DB avec fallback vers le fichier, page web `admin/system-prompt/page.jsx` avec textarea et bouton sauvegarder, lien dans la sidebar admin. Sécurité : vérification du rôle ADMIN requis. Technos : Supabase, FastAPI, React.
 
 ---
 

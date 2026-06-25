@@ -101,3 +101,26 @@ def decrypt_mfa_secret(encrypted_secret: str) -> str:
     if not encrypted_secret:
         return encrypted_secret
     return get_mfa_encryptor().decrypt(encrypted_secret)
+
+
+# Initialize API key encryptor (uses ENCRYPTION_KEY env var)
+_api_key_encryptor = None
+
+def get_api_key_encryptor():
+    """Get the API key encryptor instance using ENCRYPTION_KEY."""
+    global _api_key_encryptor
+    if _api_key_encryptor is None:
+        _api_key_encryptor = CryptoUtils(os.environ.get("ENCRYPTION_KEY"))
+    return _api_key_encryptor
+
+def encrypt_api_key(api_key: str) -> str:
+    """Encrypt an API key for storage."""
+    if not api_key:
+        return api_key
+    return get_api_key_encryptor().encrypt(api_key)
+
+def decrypt_api_key(encrypted_api_key: str) -> str:
+    """Decrypt an API key from storage."""
+    if not encrypted_api_key:
+        return encrypted_api_key
+    return get_api_key_encryptor().decrypt(encrypted_api_key)

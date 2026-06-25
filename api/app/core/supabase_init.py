@@ -8,11 +8,10 @@ def init_db():
             with conn.cursor() as cur:
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS users (
-                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        id UUID PRIMARY KEY,
                         nom VARCHAR(255) NOT NULL,
                         prenom VARCHAR(255) NOT NULL,
                         mail VARCHAR(255) UNIQUE NOT NULL,
-                        mdp TEXT NOT NULL,
                         role VARCHAR(50) DEFAULT 'USER',
                         mfa_secret TEXT,
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -85,6 +84,24 @@ def init_db():
                         UNIQUE(date)
                     );
                 """)
+
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS config (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        key VARCHAR(255) NOT NULL UNIQUE,
+                        value TEXT,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+
+                # Insert default maintenance mode config if not exists
+                cur.execute("""
+                    INSERT INTO config (key, value)
+                    VALUES ('maintenance_mode', 'false'),
+                           ('maintenance_reason', '')
+                    ON CONFLICT (key) DO NOTHING;
+                """)
+
             conn.commit()
     except Exception as e:
         return

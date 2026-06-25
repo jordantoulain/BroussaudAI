@@ -6,6 +6,7 @@ import os
 import pymysql
 import psycopg2
 from datetime import datetime, timedelta
+from api.routes.admin import verify_admin
 from contextlib import contextmanager
 import logging
 
@@ -71,16 +72,6 @@ def get_supabase_connection():
             yield conn
         finally:
             conn.close()
-
-
-def verify_admin(current_user: dict):
-    """Vérifie que l'utilisateur a le rôle ADMIN."""
-    if current_user.get("role") != "ADMIN":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accès interdit. Rôle ADMIN requis."
-        )
-
 
 # Use the pool from core.database for MariaDB
 get_mariadb_connection = get_mariadb_connection_direct
